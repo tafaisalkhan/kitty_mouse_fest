@@ -179,8 +179,6 @@ func _physics_process(delta: float) -> void:
 		tilt_axis=0.0
 		return
 	tilt_axis=0.0
-	if OS.has_feature("android") and not simulation_mode and not test_mode:
-		tilt_axis=tilt_control.sample(Input.get_gravity(),Input.get_accelerometer(),delta)
 	if not simulation_mode and not test_mode and not paused:
 		cat_call_timer-=delta
 		if cat_call_timer<=0:
@@ -189,8 +187,7 @@ func _physics_process(delta: float) -> void:
 	if active_hazard_section!=section_index: sync_active_hazards()
 	var clearing: bool=data.get("endless",false) and mice.all(func(m):return int(m.config.section)!=section_index or m.eaten)
 	if not cat.freeze:
-		if absf(tilt_axis)>0.01: steer_with_tilt()
-		elif clearing: steer_toward_base()
+		if clearing: steer_toward_base()
 		elif section_index==0 and cat.supported and cat.position.y<surface_y: walk_on_surface()
 		else: steer_toward_prey(delta)
 	if mice_eaten>=mice.size():

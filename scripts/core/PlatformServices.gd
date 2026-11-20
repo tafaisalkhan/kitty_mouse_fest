@@ -3,6 +3,7 @@ signal service_event(kind: String,payload: String)
 var native: Object
 var coffee_price:=""
 var remove_ads_price:=""
+var pack_prices: Dictionary={}
 var ads_removed:=false
 var commerce_started:=false
 var updates_checked:=false
@@ -36,6 +37,15 @@ func on_event(kind: String,payload: String) -> void:
 		service_event.emit("message",payload)
 	if kind=="coffee_price": coffee_price=payload
 	if kind=="remove_ads_price": remove_ads_price=payload
+	if kind=="pack_price":
+		var parts:=payload.split(":",false,1)
+		if parts.size()==2: pack_prices[parts[0]]=parts[1]
+	if kind=="coins_purchased":
+		var parts:=payload.split(":",false,1)
+		var amount:=int(parts[1]) if parts.size()==2 else int(payload)
+		if amount>0: Economy.add_coins(amount)
+		service_event.emit("coins_purchased",str(amount))
+		return
 	if kind=="ads_removed": ads_removed=payload=="true"
 	if kind=="update_available": update_available=true
 	if kind=="update_downloaded": update_downloaded=true
@@ -60,6 +70,10 @@ func share_game() -> void:
 	else:
 		DisplayServer.clipboard_set(store_url())
 		service_event.emit("message","Game link copied to clipboard.")
+
+func buy_coin_pack(pack_id: String) -> void:
+	if native: native.buy_product(pack_id)
+	else: service_event.emit("message","Coin packs are available via Google Play test/release builds.")
 
 func buy_coffee() -> void:
 	if native: native.buy_coffee()

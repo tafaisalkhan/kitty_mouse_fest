@@ -41,6 +41,8 @@ func show_page(which: String) -> void:
 		"Settings": settings_page()
 		"LevelSelect": levels_page()
 		"Shop": shop_page()
+		"Leaderboard": leaderboard_page()
+		"Achievements": achievements_page()
 		"Trial": trial_page()
 		_: main_page()
 
@@ -93,12 +95,13 @@ func main_page() -> void:
 	var play:=UI.button(content,"PLAY",Rect2(143,866,434,112),func(): start(int(SaveManager.progress.highest_unlocked)),Color("55ce17"))
 	play.add_theme_font_size_override("font_size",49)
 	UI.label(content,"LEVEL %d · ENDLESS BURROWS"%int(SaveManager.progress.highest_unlocked),Rect2(130,988,460,35),21,Color("d8ffba"))
-	var no_ads:=UI.button(content,"ADS REMOVED" if PlatformServices.ads_removed else "REMOVE ADS · "+(PlatformServices.remove_ads_price if not PlatformServices.remove_ads_price.is_empty() else "$4.99"),Rect2(165,370,390,58),PlatformServices.buy_remove_ads,Color("bd64cf"))
-	no_ads.add_theme_font_size_override("font_size",25)
-	no_ads.disabled=PlatformServices.ads_removed or PlatformServices.remove_ads_price.is_empty()
+	var levels_btn:=UI.button(content,"LEVELS",Rect2(195,368,330,58),func(): go("LevelSelect"),Color("3b8bd6"))
+	levels_btn.add_theme_font_size_override("font_size",26)
 	UI.button(content,"DAILY CHALLENGE",Rect2(155,1035,410,62),func(): start(25,true),Color("7d65dc"))
-	var support:=UI.button(content,"RATE · SHARE · COFFEE",Rect2(135,1130,450,62),open_support_menu,Color("4278be"))
-	support.add_theme_font_size_override("font_size",25)
+	var lb_btn:=UI.button(content,"LEADERBOARD",Rect2(45,1120,305,62),func(): show_page("Leaderboard"); Economy.left_home=true; AdsService.home_visible(false),Color("4278be"))
+	lb_btn.add_theme_font_size_override("font_size",23)
+	var ach_btn:=UI.button(content,"ACHIEVEMENTS",Rect2(370,1120,305,62),func(): show_page("Achievements"); Economy.left_home=true; AdsService.home_visible(false),Color("8e5bd6"))
+	ach_btn.add_theme_font_size_override("font_size",23)
 	if PlatformServices.native and PlatformServices.native.take_daily_launch():
 		call_deferred("start",25,true)
 		return
@@ -167,20 +170,11 @@ func open_daily() -> void:
 		Commerce.daily_popup(self,func(): show_page("MainMenu"))
 
 func service_event(kind: String,payload: String) -> void:
-	if kind in ["remove_ads_price","ads_removed"]:
-		if page in ["MainMenu","Settings","Shop"]: show_page(page)
-	if kind=="coffee_price":
-		var popup:=get_node_or_null("CommercePopup")
-		if popup:
-			var coffee:=popup.get_node_or_null("CoffeeButton")
-			if coffee:
-				coffee.disabled=PlatformServices.coffee_price.is_empty()
-				coffee.text=String(popup.get_meta("coffee_prefix","COFFEE · "))+("$1.99" if coffee.disabled else PlatformServices.coffee_price)
-				var detail:=popup.get_node_or_null("CoffeeAvailability")
-				if detail: detail.text="Available through Google Play." if coffee.disabled else "A one-time consumable to support new adventures."
+	if kind in ["pack_price","coins_purchased"]:
+		if kind=="coins_purchased": message("Coins Added!","+%s coins have been added to your balance."%payload)
+		if page=="Shop": show_page("Shop")
+		elif page=="MainMenu": show_page("MainMenu")
 	if kind in ["message","restore_complete"]: message("Kitty Hunt",payload)
-	elif kind=="coffee_purchased": message("Thank you!","Your coffee helps make more kitten adventures.")
-	elif kind=="coffee_price" and page in ["Settings","Shop"]: show_page(page)
 	elif kind in ["update_available","update_downloaded"] and page=="MainMenu":
 		if PlatformServices.update_prompts.get(kind,false): return
 		PlatformServices.update_prompts[kind]=true
@@ -208,69 +202,20 @@ func shop_page() -> void:
 		stripe.add_theme_stylebox_override("panel",UI.box(Color("643ae4") if i%2==0 else Color("7b98fa"),15))
 		content.add_child(stripe)
 	header("SHOP")
-	UI.wallet(content,Vector2(490,125),int(SaveManager.progress.coins))
-	UI.label(content,"BOMBS %d   ·   HINTS %d"%[SaveManager.progress.boosters.bombs,SaveManager.progress.boosters.hints],Rect2(55,130,420,42),23,Color("ffe074"))
-	UI.button(content,"POWERS",Rect2(50,243,290,60),func(): shop_tab="powers"; show_page("Shop"),Color("8656d9") if shop_tab=="powers" else Color("4166b2"))
-	UI.button(content,"GET COINS",Rect2(375,243,290,60),func(): shop_tab="coins"; show_page("Shop"),Color("8656d9") if shop_tab=="coins" else Color("4166b2"))
-	var scroll:=ScrollContainer.new()
-	scroll.position=Vector2(35,330)
-	scroll.size=Vector2(650,895)
-	content.add_child(scroll)
-	var body:=Control.new()
-	body.custom_minimum_size=Vector2(630,1650)
-	scroll.add_child(body)
-	var chest:=Commerce.card(body,Rect2(8,8,610,255),Color("4359cc"),Color("7fea33"))
-	Commerce.icon(chest,0,Rect2(15,10,235,180))
-	Commerce.heading(chest,"FREE CHEST",Rect2(255,27,330,64),35)
-	UI.label(chest,"25 COINS",Rect2(255,98,330,46),30,Color("ffe566"))
-	var claimed: bool=SaveManager.progress.chest_date==Economy.today()
-	var ad_ok: bool=AdsService.rewarded_ready and not AdsService.no_fill_this_launch
-	var text:="CLAIMED TODAY" if claimed else "WATCH & OPEN"
-	var open:=UI.button(chest,text,Rect2(260,166,320,65),func():
-		if not AdsService.request_reward(func(): Economy.claim_chest(); show_page("Shop")): message("Chest","Reward is loading. Please try again shortly."),Color("55ce17"))
-	open.visible=claimed or ad_ok
-	open.disabled=claimed or not ad_ok
-	var remove_ads:=Commerce.card(body,Rect2(8,1340,610,250),Color("7640cd"))
-	Commerce.heading(remove_ads,"REMOVE ADS",Rect2(15,8,580,55),36)
-	UI.label(remove_ads,"No banners or between-level ads.\nOptional reward videos remain available.",Rect2(30,68,550,72),23)
-	var ad_buy:=UI.button(remove_ads,"OWNED" if PlatformServices.ads_removed else "BUY · "+(PlatformServices.remove_ads_price if not PlatformServices.remove_ads_price.is_empty() else "$4.99"),Rect2(55,158,500,65),PlatformServices.buy_remove_ads,Color("55ce17"))
-	ad_buy.disabled=PlatformServices.ads_removed or PlatformServices.remove_ads_price.is_empty()
-	if shop_tab=="coins":
-		coin_earning_rows(body)
-		return
-	var index:=0
-	for key in Economy.PACKS:
-		var pack: Dictionary=Economy.PACKS[key]
-		var tile:=Commerce.card(body,Rect2(8,295+index*250,610,220),Color("7640cd") if key=="rescue" else Color("5a86de"))
-		Commerce.icon(tile,1,Rect2(12,22,165,155))
-		Commerce.heading(tile,pack.title,Rect2(180,15,410,50),30)
-		UI.label(tile,"%d BOMBS  +  %d HINTS"%[pack.bombs,pack.hints],Rect2(180,70,410,45),25)
-		UI.button(tile,"%d COINS"%pack.cost,Rect2(265,133,300,65),func(): Commerce.offer_popup(self,key,func(): show_page("Shop")),Color("55ce17"))
-		index+=1
-	var coffee:=Commerce.card(body,Rect2(8,1070,610,235),Color("405ac9"))
-	Commerce.icon(coffee,3,Rect2(8,25,180,165))
-	Commerce.heading(coffee,"SUPPORT THE DEV",Rect2(190,14,400,54),28)
-	UI.label(coffee,"A little coffee, more adventures",Rect2(190,72,400,42),21)
-	var buy:=UI.button(coffee,PlatformServices.coffee_price if not PlatformServices.coffee_price.is_empty() else "$1.99 · GOOGLE PLAY",Rect2(218,135,365,66),PlatformServices.buy_coffee,Color("55ce17"))
-	buy.disabled=PlatformServices.coffee_price.is_empty()
-
-func coin_earning_rows(body: Control) -> void:
-	var status:=Economy.daily_status()
-	var rows: Array=[
-		["DAILY STREAK",status.reward,"CLAIM",func(): Commerce.daily_popup(self,func(): show_page("Shop"))],
-		["DAILY CHALLENGE",175,"PLAY",func(): start(25,true)],
-		["MOUSE ADVENTURE",125,"PLAY",func(): start(int(SaveManager.progress.highest_unlocked))]]
-	for i in rows.size():
-		var row: Array=rows[i]
-		var tile:=Commerce.card(body,Rect2(8,300+i*180,610,150),Color("5a86de"))
-		for j in 3: UI.image(tile,"res://assets/ui/coin.png",Rect2(15+j*25,28-abs(1-j)*10,65,65))
-		UI.label(tile,str(row[1]),Rect2(20,95,125,40),26)
-		Commerce.heading(tile,row[0],Rect2(145,10,430,50),28)
-		var label:="UP TO %d COINS"%int(row[1]) if i>0 else "%d COINS TODAY"%int(row[1])
-		UI.label(tile,label,Rect2(140,65,250,45),20)
-		var button:=UI.button(tile,row[2],Rect2(405,67,170,60),row[3],Color("55ce17"))
-		if i==0: button.disabled=not status.can_claim
-	UI.label(body,"Coins are earned in-game.\nCoffee and Remove Ads use Google Play.",Rect2(30,905,560,85),24)
+	UI.wallet(content,Vector2(490,120),int(SaveManager.progress.coins))
+	UI.label(content,"BUY COIN PACKS",Rect2(45,126,420,44),25,Color("ffe074"))
+	for i in Economy.COIN_PACKS.size():
+		var pack: Dictionary=Economy.COIN_PACKS[i]
+		var tile:=Commerce.card(content,Rect2(45,270+i*250,630,220),Color("5a86de") if i!=1 else Color("7640cd"),Color("ffcb45"))
+		for j in 3:
+			UI.image(tile,"res://assets/ui/coin.png",Rect2(25+j*24,62-abs(1-j)*10,72,72))
+		Commerce.heading(tile,pack.title,Rect2(165,24,430,56),36)
+		UI.label(tile,"Use coins to retry & play longer",Rect2(165,82,430,40),21,Color("d8ffba"))
+		var price: String=PlatformServices.pack_prices.get(pack.id,pack.fallback)
+		var buy:=UI.button(tile,"BUY · "+price,Rect2(205,134,350,66),func(): PlatformServices.buy_coin_pack(pack.id),Color("55ce17"))
+		buy.add_theme_font_size_override("font_size",26)
+	UI.label(content,"Google Play coin purchases work in Play Store test & release builds.",Rect2(45,1070,630,70),21,Color("fff8e5"))
+	UI.button(content,"BACK TO MENU",Rect2(165,1165,390,64),func(): show_page("MainMenu"),Color("3298bd"))
 
 func header(title: String) -> void:
 	var home=load("res://scripts/core/GameButton.gd").new()
@@ -344,19 +289,79 @@ func settings_page() -> void:
 		y+=85
 	UI.button(content,"RATE GAME",Rect2(45,840,300,64),PlatformServices.rate_game,Color("5596dd"))
 	UI.button(content,"SHARE GAME",Rect2(375,840,300,64),PlatformServices.share_game,Color("5596dd"))
-	var coffee:=UI.button(content,"COFFEE · "+(PlatformServices.coffee_price if not PlatformServices.coffee_price.is_empty() else "$1.99"),Rect2(45,925,300,64),PlatformServices.buy_coffee,Color("c27c4d"))
-	coffee.add_theme_font_size_override("font_size",25)
-	coffee.disabled=PlatformServices.coffee_price.is_empty()
-	UI.button(content,"RESTORE",Rect2(375,925,300,64),PlatformServices.restore_purchases,Color("8568c2"))
+	UI.button(content,"RESTORE COINS",Rect2(45,925,630,64),PlatformServices.restore_purchases,Color("8568c2"))
 	UI.button(content,"DAILY CHALLENGE ALERT",Rect2(45,1010,630,64),func(): PlatformServices.update_notification(not SaveManager.settings.get("challenge_notifications",false)); show_page("Settings"),Color("65a852"))
 	UI.label(content,"Notifications: "+("ON" if SaveManager.settings.get("challenge_notifications",false) else "OFF"),Rect2(80,1080,560,35),21)
 	UI.button(content,"PRIVACY",Rect2(45,1130,300,60),func():
 		if PlatformServices.native and not AdsService.no_fill_this_launch: PlatformServices.native.privacy_options()
 		else: message("Privacy","Progress is stored on your device. Google Play handles purchases. AdMob requests ads only when configured and consent allows. For privacy questions, contact muhammadfaysal.khan7@gmail.com."))
 	UI.button(content,"RESET",Rect2(375,1130,300,60),reset_confirm,Color("ca6b65"))
-	var remove_ads:=UI.button(content,"ADS REMOVED" if PlatformServices.ads_removed else "REMOVE ADS · "+(PlatformServices.remove_ads_price if not PlatformServices.remove_ads_price.is_empty() else "$4.99"),Rect2(45,1210,630,58),PlatformServices.buy_remove_ads,Color("a362bf"))
-	remove_ads.add_theme_font_size_override("font_size",26)
-	remove_ads.disabled=PlatformServices.ads_removed or PlatformServices.remove_ads_price.is_empty()
+
+func leaderboard_page() -> void:
+	AdsService.home_visible(false)
+	Economy.left_home=true
+	header("LEADERBOARD")
+	var cleared: int=SaveManager.progress.get("completed",{}).size()
+	var stars: int=SaveManager.stars_total()
+	var coins: int=int(SaveManager.progress.get("coins",0))
+	var my_score: int=cleared*150+stars*50+coins
+	var my_card:=Commerce.card(content,Rect2(45,135,630,130),Color("3f5fe6"),Color("ffcb45"))
+	Commerce.heading(my_card,"YOUR SCORE: %d"%my_score,Rect2(20,16,590,50),34)
+	UI.label(my_card,"%d Levels  ·  %d Stars  ·  %d Coins"%[cleared,stars,coins],Rect2(20,70,590,42),22,Color("d8ffba"))
+	var entries: Array=[
+		{"name":"WhiskerKing","score":4800,"levels":24},
+		{"name":"PurrMaster","score":3650,"levels":18},
+		{"name":"MochiPaws","score":2400,"levels":12},
+		{"name":"ShadowCat","score":1500,"levels":7},
+		{"name":"TinyClaw","score":750,"levels":4},
+		{"name":"YOU","score":my_score,"levels":cleared,"self":true}
+	]
+	entries.sort_custom(func(a,b): return int(a.score)>int(b.score))
+	for i in entries.size():
+		var row: Dictionary=entries[i]
+		var is_me: bool=row.get("self",false)
+		var card:=Commerce.card(content,Rect2(45,295+i*125,630,108),Color("55ce17") if is_me else Color("4a5cb8"),Color("eaff7c") if is_me else Color("8cb4ff"))
+		var rank_lbl:=UI.label(card,"#%d  %s"%[i+1,row.name],Rect2(25,18,340,70),27,Color("ffe566") if is_me else Color("fff8e5"))
+		rank_lbl.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
+		var score_lbl:=UI.label(card,"%d pts · %d lvls"%[row.score,row.levels],Rect2(345,18,260,70),23,Color("fff8e5"))
+		score_lbl.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
+	UI.label(content,"Play Games Project ID: 737017468138",Rect2(45,1075,630,45),20,Color("ffe074"))
+	UI.button(content,"BACK TO MENU",Rect2(165,1150,390,64),func(): show_page("MainMenu"),Color("3298bd"))
+
+func achievements_page() -> void:
+	AdsService.home_visible(false)
+	Economy.left_home=true
+	header("ACHIEVEMENTS")
+	var cleared: int=SaveManager.progress.get("completed",{}).size()
+	var stars: int=SaveManager.stars_total()
+	var coins: int=int(SaveManager.progress.get("coins",0))
+	var streak: int=int(Economy.daily_status().day)
+	var list: Array=[
+		{"title":"FIRST CATCH","desc":"Complete your first level","cur":mini(cleared,1),"goal":1},
+		{"title":"BURROW EXPLORER","desc":"Complete 5 levels","cur":mini(cleared,5),"goal":5},
+		{"title":"MASTER HUNTER","desc":"Complete 20 levels","cur":mini(cleared,20),"goal":20},
+		{"title":"STAR COLLECTOR","desc":"Earn 15 stars","cur":mini(stars,15),"goal":15},
+		{"title":"COIN HOARDER","desc":"Hold 500 coins","cur":mini(coins,500),"goal":500},
+		{"title":"DAILY REGULAR","desc":"Reach a 3-day streak","cur":mini(streak,3),"goal":3}
+	]
+	var scroll:=ScrollContainer.new()
+	scroll.position=Vector2(35,140)
+	scroll.size=Vector2(650,975)
+	content.add_child(scroll)
+	var body:=Control.new()
+	body.custom_minimum_size=Vector2(630,list.size()*158)
+	scroll.add_child(body)
+	for i in list.size():
+		var item: Dictionary=list[i]
+		var unlocked: bool=int(item.cur)>=int(item.goal)
+		var card:=Commerce.card(body,Rect2(10,8+i*155,610,136),Color("55aa3b") if unlocked else Color("4155a8"),Color("eaff7c") if unlocked else Color("8cb4ff"))
+		var title_lbl:=UI.label(card,item.title,Rect2(24,14,390,46),26,Color("ffe566") if unlocked else Color("fff8e5"))
+		title_lbl.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
+		var desc_lbl:=UI.label(card,item.desc,Rect2(24,66,390,46),21,Color("d8ffba") if unlocked else Color("dbe6ff"))
+		desc_lbl.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
+		var status_text:="UNLOCKED ✓" if unlocked else "%d / %d"%[item.cur,item.goal]
+		UI.label(card,status_text,Rect2(410,36,180,64),23,Color("d8ffba") if unlocked else Color("ffe074"))
+	UI.button(content,"BACK TO MENU",Rect2(165,1150,390,64),func(): show_page("MainMenu"),Color("3298bd"))
 
 func message(title: String,text: String) -> void:
 	var dialog:=AcceptDialog.new()

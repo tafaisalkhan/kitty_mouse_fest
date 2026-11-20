@@ -6,6 +6,11 @@ var support_shown:=false
 var daily_prompt_shown:=false
 var daily_prompt_date:=""
 const PACKS={"bombs":{"title":"BOMB BUNDLE","cost":60,"bombs":3,"hints":0},"hints":{"title":"HELPING PAWS","cost":45,"bombs":0,"hints":3},"rescue":{"title":"EPIC HUNT PACK","cost":225,"bombs":10,"hints":5}}
+const COIN_PACKS=[
+	{"id":"coins_1000","title":"1,000 COINS","coins":1000,"fallback":"$0.99"},
+	{"id":"coins_2000","title":"2,000 COINS","coins":2000,"fallback":"$1.29"},
+	{"id":"coins_3000","title":"3,000 COINS","coins":3000,"fallback":"$1.99"}
+]
 const RETRY_COST:=25
 const AD_COIN_REWARD:=50
 
