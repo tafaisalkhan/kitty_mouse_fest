@@ -16,8 +16,8 @@ config/use_custom_user_dir=true
 config/custom_user_dir_name="Godot/app_userdata/Kitty Rescue- Dig to Mom"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 boot_splash/bg_color=Color(0.04, 0.63, 0.96, 1)
-boot_splash/image="res://assets/branding/white-ball-icon.png"
-config/icon="res://assets/branding/white-ball-icon.png"
+boot_splash/image="res://assets/branding/kitty-hunt-icon.png"
+config/icon="res://assets/branding/kitty-hunt-icon.png"
 
 [autoload]
 
