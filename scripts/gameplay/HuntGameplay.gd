@@ -5,7 +5,6 @@ var growth:=0
 var mice_eaten:=0
 var hunt_complete:=false
 var failure_reason:="Avoid hazards and eat smaller mice first."
-var size_label: Label
 var cat: RigidBody2D
 var starting_art_scale:=Vector2.ONE
 var growth_from:=50.0
@@ -141,7 +140,11 @@ func build_hud() -> void:
 		if child is Node2D and child.get_script()==load("res://scripts/gameplay/CatVisual.gd"):
 			child.hide()
 		if child is Label and child.text=="➜": child.hide()
-	size_label=UI.label(hud,"SIZE 1 · EAT SMALL FIRST",Rect2(166,112,305,60),22,Color("fff5d9"))
+	var objective:=hud.get_node_or_null("ObjectivePanel")
+	if objective: objective.hide()
+	if is_instance_valid(progress_label):
+		progress_label.queue_free()
+		progress_label=null
 
 func _process(delta: float) -> void:
 	super._process(delta)
@@ -159,8 +162,6 @@ func _process(delta: float) -> void:
 		center/=live.size()
 		group.label.position=Vector2(center.x-120,top)
 		group.label.text="%d SMALL%s"%[live.size()," !" if live.any(func(m):return m.fleeing) else ""]
-	progress_label.text="%d / %d mice eaten  ·  SIZE %d"%[mice_eaten,mice.size(),growth+1]
-	size_label.text="SIZE %d  ·  %d / %d MICE"%[growth+1,mice_eaten,mice.size()]
 	# Follow moving prey every rendered frame, including while Kitty rolls.
 	if not ended: update_face_attention()
 	if last_section!=section_index:

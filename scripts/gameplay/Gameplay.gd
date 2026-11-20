@@ -163,7 +163,8 @@ func apply_safe_area() -> void:
 	var top:=maxf(0,safe.position.y*ratio.y-35)
 	# The board remains fully visible; only the HUD moves inside system insets.
 	hud.position.y=top
-	progress_label.position.y=minf(1190,safe.end.y*ratio.y-top-70)
+	if is_instance_valid(progress_label):
+		progress_label.position.y=minf(1190,safe.end.y*ratio.y-top-70)
 
 func build_hud() -> void:
 	var layer:=CanvasLayer.new()
@@ -201,6 +202,7 @@ func build_hud() -> void:
 	game_button("hint",Rect2(hint_x,18,78,78),toggle_hint,Color("efb92b"))
 	time_label=UI.label(hud,"",Rect2(513,47,88,32),19)
 	var objective:=Panel.new()
+	objective.name="ObjectivePanel"
 	objective.position=Vector2(161,105)
 	objective.size=Vector2(315,73)
 	var cream:=UI.box(Color("fff0c3"),21)
@@ -221,7 +223,6 @@ func build_hud() -> void:
 	mom_icon.position=Vector2(437,140)
 	hud.add_child(mom_icon)
 	progress_label=UI.label(hud,"",Rect2(50,1205,620,44),24)
-	UI.label(hud,data.get("tutorial","Dig a safe way home"),Rect2(42,1165,636,35),19,Color("fff4d5"))
 	overlay=Control.new()
 	overlay.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	overlay.process_mode=Node.PROCESS_MODE_ALWAYS
@@ -317,6 +318,7 @@ func _process(delta: float) -> void:
 	dig_sound_timer-=delta
 	if is_instance_valid(progress_label):
 		progress_label.text="♥  %d / %d kittens home"%[rescued,kittens.size()]
+	if is_instance_valid(time_label):
 		time_label.text="%02d:%02d"%[int(elapsed)/60,int(elapsed)%60]
 	for i in range(particles.size()-1,-1,-1):
 		particles[i].life-=delta

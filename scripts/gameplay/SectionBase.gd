@@ -23,9 +23,3 @@ func _draw() -> void:
 			var x: float=(-305+i*45-opening*330) if side<0 else 25+i*45+opening*330
 			draw_line(Vector2(x,-5),Vector2(x,4),Color("ffdc88"),2,true)
 		draw_style_box(UI.box(Color("586d89"),5),Rect2(side*318-12,-20,24,42))
-	var sign:=UI.box(Color("4a3975"),12)
-	sign.border_color=Color("ffd672")
-	sign.set_border_width_all(2)
-	draw_style_box(sign,Rect2(-150,-79,300,46))
-	var text:="BASE %d  ·  %d / %d"%[number,ready_count,total]
-	draw_string(UI.game_font(),Vector2(-143,-48),text,HORIZONTAL_ALIGNMENT_CENTER,286,23,Color("fff5d8"))
