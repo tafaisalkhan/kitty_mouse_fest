@@ -1,7 +1,7 @@
 extends RefCounted
 # Portrait phone: Android reports upward acceleration, so downhill is -X.
-const DEAD_ZONE:=0.055
-const FULL_TILT:=0.45
+const DEAD_ZONE:=0.04
+const FULL_TILT:=0.35
 var filtered:=0.0
 var available:=false
 func sample(gravity: Vector3,accelerometer: Vector3,delta: float) -> float:

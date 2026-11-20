@@ -211,10 +211,11 @@ func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
 
 func steer_with_tilt() -> void:
-	# Apply a mass-scaled force, never move through terrain or cancel falling.
-	var desired:=tilt_axis*90.0
-	var acceleration:=clampf((desired-cat.linear_velocity.x)*6.0,-380,380)
+	# Apply a mass-scaled force and rolling torque strong enough to overcome sand friction, never move through terrain or cancel falling.
+	var desired:=tilt_axis*240.0
+	var acceleration:=clampf((desired-cat.linear_velocity.x)*10.0,-1150,1150)
 	cat.apply_central_force(Vector2(acceleration*cat.mass,0))
+	cat.apply_torque(tilt_axis*cat.mass*28000.0)
 	steering_velocity=cat.linear_velocity.x
 
 func steer_toward_base() -> void:
