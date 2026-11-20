@@ -242,16 +242,22 @@ func sync_active_hazards() -> void:
 		if obstacle.body is RigidBody2D: obstacle.body.set_deferred("freeze",not active)
 
 func steer_toward_prey(delta: float) -> void:
-	# Kitty rolls toward edible prey she can see; excavation still determines
-	# which passages exist. Gravity and terrain collisions control her descent.
+	# Kitty eagerly rolls toward edible prey; excavation still determines
+	# which passages exist, and gravity/terrain collisions control her descent.
 	var target: Node2D=null
-	var nearest:=650.0
+	var nearest:=800.0
+	var clear_target:=false
 	for mouse in mice:
 		if mouse.eaten or mouse.required_growth>growth or int(mouse.config.section)!=section_index: continue
 		var offset: Vector2=mouse.global_position-cat.global_position
-		if offset.y < -120 or offset.y>625: continue
+		if offset.y < -180 or offset.y>820: continue
 		var distance:=offset.length()
-		if distance<nearest and sight_clear(cat.global_position,mouse.global_position):
+		var clear:=sight_clear(cat.global_position,mouse.global_position)
+		if clear and (not clear_target or distance<nearest):
+			target=mouse
+			nearest=distance
+			clear_target=true
+		elif not clear_target and distance<nearest:
 			target=mouse
 			nearest=distance
 	var desired:=0.0
@@ -268,11 +274,14 @@ func steer_toward_prey(delta: float) -> void:
 			approach_x=target.position.x+away*(cat.radius*0.9+mouse.radius*0.2)
 			break
 		approach_x=clampf(approach_x,36+cat.radius,684-cat.radius)
-		desired=clampf((approach_x-cat.position.x)*3.0,-90,90)
-	steering_velocity=move_toward(steering_velocity,desired,420*delta)
-	var acceleration_limit:=320.0
-	var acceleration:=clampf((steering_velocity-cat.linear_velocity.x)*5,-acceleration_limit,acceleration_limit)
+		var max_speed:=220.0 if clear_target else 135.0
+		desired=clampf((approach_x-cat.position.x)*4.0,-max_speed,max_speed)
+	steering_velocity=move_toward(steering_velocity,desired,720*delta)
+	var acceleration_limit:=1150.0
+	var acceleration:=clampf((steering_velocity-cat.linear_velocity.x)*8.0,-acceleration_limit,acceleration_limit)
 	cat.apply_central_force(Vector2(acceleration*cat.mass,0))
+	if absf(steering_velocity)>5.0:
+		cat.apply_torque(clampf(steering_velocity/220.0,-1.0,1.0)*cat.mass*26000.0)
 
 func rescue_kitten(_kitten: Node2D) -> void:
 	pass # Reaching a former rescue goal never completes a hunt.
