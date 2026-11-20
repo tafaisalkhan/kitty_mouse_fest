@@ -564,6 +564,7 @@ func panel(title: String,rect:=Rect2(70,335,580,615)) -> void:
 	if not SaveManager.settings.reduce_motion:
 		bg.scale=Vector2.ONE*0.82
 		var intro:=create_tween()
+		intro.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 		intro.tween_property(bg,"scale",Vector2.ONE,0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func result_panel(success: bool,stars:=0) -> void:
@@ -687,7 +688,7 @@ func pause_game() -> void:
 		var setting_label:=UI.label(overlay,["Music","Sound effects","Vibration"][i],Rect2(110,270+i*80,300,60),30,Color("fff8e5"))
 		setting_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
 		var toggle:=CheckButton.new()
-		toggle.position=Vector2(470,275+i*80)
+		toggle.position=Vector2(500,275+i*80)
 		toggle.size=Vector2(110,55)
 		toggle.button_pressed=SaveManager.settings[key]
 		toggle.toggled.connect(func(value): SaveManager.settings[key]=value; SaveManager.save_settings())
