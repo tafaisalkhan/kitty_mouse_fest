@@ -346,7 +346,7 @@ func settings_page() -> void:
 	UI.label(content,"Notifications: "+("ON" if SaveManager.settings.get("challenge_notifications",false) else "OFF"),Rect2(80,1080,560,35),21)
 	UI.button(content,"PRIVACY",Rect2(45,1130,300,60),func():
 		if PlatformServices.native and not AdsService.no_fill_this_launch: PlatformServices.native.privacy_options()
-		else: message("Privacy","Progress is stored on your device. Google Play handles purchases. AdMob requests ads only when configured and consent allows."))
+		else: message("Privacy","Progress is stored on your device. Google Play handles purchases. AdMob requests ads only when configured and consent allows. For privacy questions, contact muhammadfaysal.khan7@gmail.com."))
 	UI.button(content,"RESET",Rect2(375,1130,300,60),reset_confirm,Color("ca6b65"))
 	var remove_ads:=UI.button(content,"ADS REMOVED" if PlatformServices.ads_removed else "REMOVE ADS · "+(PlatformServices.remove_ads_price if not PlatformServices.remove_ads_price.is_empty() else "$4.99"),Rect2(45,1210,630,58),PlatformServices.buy_remove_ads,Color("a362bf"))
 	remove_ads.add_theme_font_size_override("font_size",26)
