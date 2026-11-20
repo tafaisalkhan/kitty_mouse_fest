@@ -17,6 +17,7 @@ import com.google.android.gms.games.PlayGamesSdk;
 import java.util.*;
 
 public final class KittyServices extends GodotPlugin {
+    private static final String LEADERBOARD_ID = "CgkI6qmozbkVEAIQAQ";
     private AdsController ads;
     private CoffeeBilling billing;
     private AppUpdateManager updates;
@@ -104,6 +105,20 @@ public final class KittyServices extends GodotPlugin {
             });
         } catch (Exception e) {
             event("play_games_sign_in_failed", e.getMessage() != null ? e.getMessage() : "");
+        }
+    }); }
+    @UsedByGodot public void submit_score(long score) { runOnUiThread(() -> {
+        try {
+            PlayGames.getLeaderboardsClient(getActivity()).submitScore(LEADERBOARD_ID, score);
+        } catch (Exception ignored) {}
+    }); }
+    @UsedByGodot public void show_leaderboard() { runOnUiThread(() -> {
+        try {
+            PlayGames.getLeaderboardsClient(getActivity()).getLeaderboardIntent(LEADERBOARD_ID)
+                .addOnSuccessListener(intent -> getActivity().startActivityForResult(intent, 449))
+                .addOnFailureListener(e -> event("message", "Sign in to Google Play Games to view the global leaderboard."));
+        } catch (Exception e) {
+            event("message", "Google Play Games leaderboard is not available yet.");
         }
     }); }
     @UsedByGodot public void complete_update() { runOnUiThread(() -> { if (updates != null) updates.completeUpdate(); }); }

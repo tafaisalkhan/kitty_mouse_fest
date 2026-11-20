@@ -72,6 +72,7 @@ func complete(number: int, stars: int, seconds: float, count: int) -> int:
 	progress.total_rescued += count
 	progress.coins=int(progress.get("coins",0))+reward
 	atomic_save("user://savegame.json", progress)
+	PlatformServices.submit_leaderboard_score()
 	return reward
 
 func stars_total() -> int:

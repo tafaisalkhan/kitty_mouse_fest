@@ -51,7 +51,9 @@ func on_event(kind: String,payload: String) -> void:
 	if kind=="ads_removed": ads_removed=payload=="true"
 	if kind=="update_available": update_available=true
 	if kind=="update_downloaded": update_downloaded=true
-	if kind=="play_games_signed_in": play_games_player=payload
+	if kind=="play_games_signed_in":
+		play_games_player=payload
+		submit_leaderboard_score()
 	if kind=="play_games_sign_in_failed": play_games_player=""
 	service_event.emit(kind,payload)
 
@@ -71,6 +73,19 @@ func enter_home() -> void:
 func sign_in_play_games() -> void:
 	if native: native.sign_in_play_games()
 	else: service_event.emit("message","Google Play Games sign-in is available on Android.")
+
+func player_score() -> int:
+	return SaveManager.progress.get("completed",{}).size()*150+SaveManager.stars_total()*50+int(SaveManager.progress.get("coins",0))
+
+func submit_leaderboard_score() -> void:
+	if native: native.submit_score(player_score())
+
+func show_google_leaderboard() -> void:
+	if native:
+		native.submit_score(player_score())
+		native.show_leaderboard()
+	else:
+		service_event.emit("message","Global Google Play Leaderboard is available on Android.")
 
 func rate_game() -> void:
 	if native: native.rate_game()

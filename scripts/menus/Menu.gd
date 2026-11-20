@@ -303,33 +303,23 @@ func leaderboard_page() -> void:
 	var cleared: int=SaveManager.progress.get("completed",{}).size()
 	var stars: int=SaveManager.stars_total()
 	var coins: int=int(SaveManager.progress.get("coins",0))
-	var my_score: int=cleared*150+stars*50+coins
-	var my_card:=Commerce.card(content,Rect2(45,135,630,130),Color("3f5fe6"),Color("ffcb45"))
-	Commerce.heading(my_card,"YOUR SCORE: %d"%my_score,Rect2(20,16,590,50),34)
-	UI.label(my_card,"%d Levels  ·  %d Stars  ·  %d Coins"%[cleared,stars,coins],Rect2(20,70,590,42),22,Color("d8ffba"))
-	var entries: Array=[
-		{"name":"WhiskerKing","score":4800,"levels":24},
-		{"name":"PurrMaster","score":3650,"levels":18},
-		{"name":"MochiPaws","score":2400,"levels":12},
-		{"name":"ShadowCat","score":1500,"levels":7},
-		{"name":"TinyClaw","score":750,"levels":4},
-		{"name":"YOU","score":my_score,"levels":cleared,"self":true}
-	]
-	entries.sort_custom(func(a,b): return int(a.score)>int(b.score))
-	for i in entries.size():
-		var row: Dictionary=entries[i]
-		var is_me: bool=row.get("self",false)
-		var card:=Commerce.card(content,Rect2(45,295+i*125,630,108),Color("55ce17") if is_me else Color("4a5cb8"),Color("eaff7c") if is_me else Color("8cb4ff"))
-		var rank_lbl:=UI.label(card,"#%d  %s"%[i+1,row.name],Rect2(25,18,340,70),27,Color("ffe566") if is_me else Color("fff8e5"))
-		rank_lbl.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
-		var score_lbl:=UI.label(card,"%d pts · %d lvls"%[row.score,row.levels],Rect2(345,18,260,70),23,Color("fff8e5"))
-		score_lbl.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
+	var my_score: int=PlatformServices.player_score()
+	var my_card:=Commerce.card(content,Rect2(45,175,630,220),Color("3f5fe6"),Color("ffcb45"))
+	Commerce.heading(my_card,"YOUR SCORE: %d"%my_score,Rect2(20,24,590,56),38)
+	UI.label(my_card,"%d Levels Cleared  ·  %d Stars"%[cleared,stars],Rect2(20,96,590,42),24,Color("d8ffba"))
+	UI.label(my_card,"%d Coins Balance"%coins,Rect2(20,144,590,42),24,Color("ffe566"))
+	var status_card:=Commerce.card(content,Rect2(45,440,630,310),Color("4a5cb8"),Color("8cb4ff"))
+	var player_title: String="Signed in as %s ✓"%PlatformServices.play_games_player if not PlatformServices.play_games_player.is_empty() else "Google Play Games"
+	Commerce.heading(status_card,player_title,Rect2(20,24,590,52),30)
+	var detail_text:="View live global rankings and compete with other Kitty Hunt players." if not PlatformServices.play_games_player.is_empty() else "Sign in to submit your real score and view the live global leaderboard."
+	var detail_lbl:=UI.label(status_card,detail_text,Rect2(35,88,560,72),22,Color("fff8e5"))
+	detail_lbl.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	var open_lb:=UI.button(status_card,"OPEN GLOBAL LEADERBOARD",Rect2(65,188,500,72),PlatformServices.show_google_leaderboard,Color("55ce17"))
+	open_lb.add_theme_font_size_override("font_size",24)
 	if PlatformServices.play_games_player.is_empty():
-		var pg_btn:=UI.button(content,"SIGN IN · GOOGLE PLAY",Rect2(135,1065,450,58),PlatformServices.sign_in_play_games,Color("55ce17"))
-		pg_btn.add_theme_font_size_override("font_size",23)
-	else:
-		UI.label(content,"Google Play: %s ✓"%PlatformServices.play_games_player,Rect2(45,1072,630,45),22,Color("d8ffba"))
-	UI.button(content,"BACK TO MENU",Rect2(165,1150,390,64),func(): show_page("MainMenu"),Color("3298bd"))
+		var pg_btn:=UI.button(content,"SIGN IN · GOOGLE PLAY",Rect2(135,810,450,64),PlatformServices.sign_in_play_games,Color("7d65dc"))
+		pg_btn.add_theme_font_size_override("font_size",24)
+	UI.button(content,"BACK TO MENU",Rect2(165,1120,390,64),func(): show_page("MainMenu"),Color("3298bd"))
 
 func achievements_page() -> void:
 	AdsService.home_visible(false)
