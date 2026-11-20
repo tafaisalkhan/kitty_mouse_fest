@@ -1,6 +1,6 @@
 extends Node
 
-const DEFAULT_SETTINGS = {"music":true,"effects":true,"music_volume":0.35,"effects_volume":0.7,"vibration":true,"left_handed":false,"reduce_motion":false,"language":"en","challenge_notifications":false}
+const DEFAULT_SETTINGS = {"music":true,"effects":true,"music_volume":0.35,"effects_volume":0.7,"vibration":true,"left_handed":false,"reduce_motion":false,"language":"en","challenge_notifications":true}
 var settings: Dictionary = DEFAULT_SETTINGS.duplicate(true)
 var progress: Dictionary = {"version":1,"highest_unlocked":1,"completed":{},"total_rescued":0,"daily":{},"coins":0,"daily_streak":{},"boosters":{"bombs":0,"hints":0},"chest_date":"","trial":{"highest_unlocked":1,"completed":{}}}
 var level_number: int = 1
