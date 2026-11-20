@@ -695,10 +695,7 @@ func pause_game() -> void:
 		overlay.add_child(toggle)
 	UI.button(overlay,"RATE",Rect2(105,540,240,65),PlatformServices.rate_game,Color("5596dd"))
 	UI.button(overlay,"SHARE",Rect2(375,540,240,65),PlatformServices.share_game,Color("5596dd"))
-	var coffee:=UI.button(overlay,"COFFEE",Rect2(105,630,240,65),PlatformServices.buy_coffee,Color("c27c4d"))
-	coffee.name="CoffeeSupport"
-	coffee.disabled=PlatformServices.coffee_price.is_empty()
-	UI.button(overlay,"RESTORE",Rect2(375,630,240,65),PlatformServices.restore_purchases,Color("8568c2"))
+	UI.button(overlay,"RESTORE COINS",Rect2(105,630,510,65),PlatformServices.restore_purchases,Color("8568c2"))
 	UI.button(overlay,"RESUME",Rect2(145,735,430,70),func():
 		get_tree().paused=false
 		paused=false
