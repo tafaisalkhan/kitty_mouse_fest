@@ -40,8 +40,11 @@ static func modal(parent: Node,title: String,rect: Rect2) -> Control:
 	card(root,rect,Color("6652d7"))
 	card(root,Rect2(rect.position+Vector2(70,-32),Vector2(rect.size.x-140,100)),Color("bc65dd"))
 	heading(root,title,Rect2(rect.position+Vector2(60,-25),Vector2(rect.size.x-120,85)))
-	var close:=UI.button(root,"×",Rect2(rect.end.x-64,rect.position.y+78,45,48),func(): root.queue_free(),Color("ec6fa7"))
-	close.custom_minimum_size=Vector2(45,48)
+	var close:=UI.button(root,"×",Rect2(rect.end.x-66,rect.position.y+12,50,50),func(): root.queue_free(),Color("ec6fa7"))
+	close.custom_minimum_size=Vector2(50,50)
+	close.add_theme_font_size_override("font_size",28)
+	close.add_theme_constant_override("content_margin_left",0)
+	close.add_theme_constant_override("content_margin_right",0)
 	return root
 
 static func daily_popup(parent: Node,on_claim: Callable) -> Control:
@@ -54,18 +57,18 @@ static func daily_popup(parent: Node,on_claim: Callable) -> Control:
 	var first:=int((status.day-1)/7)*7+1
 	for i in 7:
 		var day:=first+i
-		var rect:=Rect2(89+(i%3)*184,385+(i/3)*178,172,163)
-		if i==6: rect=Rect2(89,741,540,145)
+		var rect:=Rect2(90+(i%3)*184,385+(i/3)*178,172,163)
+		if i==6: rect=Rect2(90,741,540,145)
 		var claimed: bool=day<status.day or (day==status.day and not status.can_claim)
 		var current: bool=day==status.day and status.can_claim
 		var tile:=card(root,rect,Color("59cbe7") if not current else Color("73cb42"),Color("9cecff") if not current else Color("eaff7c"))
-		UI.label(tile,"DAY %d"%day,Rect2(0,2,rect.size.x,38),25)
+		UI.label(tile,"DAY %d"%day,Rect2(0,6,rect.size.x,36),24)
 		if claimed:
-			UI.label(tile,"✓",Rect2(20,42,rect.size.x-40,73),54,Color("d4ff9a"))
+			UI.label(tile,"✓",Rect2(20,40,rect.size.x-40,70),52,Color("d4ff9a"))
 		elif i in [1,4,6]:
-			icon(tile,1,Rect2(rect.size.x/2-43,39,86,78))
-		else: UI.image(tile,"res://assets/ui/coin.png",Rect2(rect.size.x/2-35,43,70,70))
-		UI.label(tile,"+%d"%(day*10),Rect2(5,rect.size.y-44,rect.size.x-10,36),27,Color("fff8cf"))
+			icon(tile,1,Rect2(rect.size.x/2-40,38,80,72))
+		else: UI.image(tile,"res://assets/ui/coin.png",Rect2(rect.size.x/2-33,40,66,66))
+		UI.label(tile,"+%d"%(day*10),Rect2(5,rect.size.y-52,rect.size.x-10,36),26,Color("fff8cf"))
 	var claim:=UI.button(root,"CLAIM %d COINS"%status.reward if status.can_claim else "CLAIMED TODAY",Rect2(145,930,430,85),func():
 		var amount:=Economy.claim_daily()
 		if amount<=0: return
