@@ -383,12 +383,13 @@ func result_panel(success: bool,stars:=0) -> void:
 			UI.image(overlay,"res://assets/ui/coin.png",Rect2(286,689,38,38))
 			var reward_label:=UI.label(overlay,"+%d"%reward_coins,Rect2(334,685,140,45),30,Color("ffe45e"))
 			reward_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
-		UI.button(overlay,"TRIAL SELECT" if SaveManager.trial_mode and SaveManager.trial_number==preload("res://scripts/generation/TrialLevels.gd").COUNT else "NEXT TRIAL" if SaveManager.trial_mode else "NEXT HUNT",Rect2(145,745,430,68),next_hunt,Color("65ab60"))
-		UI.button(overlay,"RETRY",Rect2(145,835,430,65),restart)
-		UI.button(overlay,"MAIN MENU",Rect2(145,925,430,65),func(): get_tree().change_scene_to_file("res://scenes/menus/MainMenu.tscn"),Color("3298bd"))
+		var next_btn:=UI.button(overlay,"TRIAL SELECT" if SaveManager.trial_mode and SaveManager.trial_number==preload("res://scripts/generation/TrialLevels.gd").COUNT else "NEXT TRIAL" if SaveManager.trial_mode else "NEXT HUNT",Rect2(145,745,430,68),next_hunt,Color("65ab60"))
+		var retry_btn:=UI.button(overlay,"RETRY",Rect2(145,835,430,65),restart)
+		var menu_btn:=UI.button(overlay,"MAIN MENU",Rect2(145,925,430,65),func(): get_tree().change_scene_to_file("res://scenes/menus/MainMenu.tscn"),Color("3298bd"))
+		var win_buttons: Array[Button]=[next_btn,retry_btn,menu_btn]
 		if not rewards_animated and not SaveManager.trial_mode:
 			rewards_animated=true
-			fly_reward_coins()
+			fly_reward_coins(win_buttons)
 	else:
 		panel("HUNT FAILED",Rect2(80,275,560,720))
 		animate_stars(0,false)

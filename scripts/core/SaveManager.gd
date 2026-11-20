@@ -66,7 +66,7 @@ func complete(number: int, stars: int, seconds: float, count: int) -> int:
 	else:
 		var key := str(number)
 		var old: Dictionary = progress.completed.get(key, {})
-		reward=(50 if old.is_empty() else 0)+maxi(0,stars-int(old.get("stars",0)))*25
+		reward=20
 		progress.completed[key] = {"stars":maxi(stars, int(old.get("stars", 0))),"time":minf(seconds, float(old.get("time", 1e9)))}
 		progress.highest_unlocked = maxi(int(progress.highest_unlocked), number + 1)
 	progress.total_rescued += count

@@ -576,12 +576,13 @@ func result_panel(success: bool,stars:=0) -> void:
 		UI.image(overlay,"res://assets/ui/coin.png",Rect2(286,682,42,42))
 		var reward_label:=UI.label(overlay,"+%d"%reward_coins,Rect2(338,679,140,45),31,Color("ffe45e"))
 		reward_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
-		UI.button(overlay,"NEXT LEVEL",Rect2(145,735,430,68),func(): SaveManager.daily_mode=false; SaveManager.level_number+=1; restart(),Color("65ab60"))
-		UI.button(overlay,"RETRY",Rect2(145,825,430,65),restart)
-		UI.button(overlay,"LEVEL SELECT",Rect2(145,915,430,65),func(): get_tree().change_scene_to_file("res://scenes/menus/LevelSelect.tscn"),Color("3298bd"))
+		var next_btn:=UI.button(overlay,"NEXT LEVEL",Rect2(145,735,430,68),func(): SaveManager.daily_mode=false; SaveManager.level_number+=1; restart(),Color("65ab60"))
+		var retry_btn:=UI.button(overlay,"RETRY",Rect2(145,825,430,65),restart)
+		var select_btn:=UI.button(overlay,"LEVEL SELECT",Rect2(145,915,430,65),func(): get_tree().change_scene_to_file("res://scenes/menus/LevelSelect.tscn"),Color("3298bd"))
+		var win_buttons: Array[Button]=[next_btn,retry_btn,select_btn]
 		if not rewards_animated:
 			rewards_animated=true
-			fly_reward_coins()
+			fly_reward_coins(win_buttons)
 		return
 	panel("LEVEL FAILED",Rect2(80,275,560,720))
 	animate_stars(0,false)
@@ -631,11 +632,13 @@ func animate_stars(stars: int,success: bool) -> void:
 			tween.tween_property(star,"scale",Vector2.ONE,0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 			if i<stars: tween.tween_callback(func(): AudioManager.play_fx("star"))
 
-func fly_reward_coins() -> void:
+func fly_reward_coins(win_buttons: Array[Button]=[]) -> void:
 	if reward_coins<=0 or not is_instance_valid(coin_label): return
 	if SaveManager.settings.reduce_motion:
 		coin_label.text=str(SaveManager.progress.coins)
 		return
+	for b in win_buttons:
+		if is_instance_valid(b): b.disabled=true
 	for i in 10:
 		var coin:=UI.image(overlay,"res://assets/ui/coin.png",Rect2(310,680,46,46))
 		coin.pivot_offset=Vector2(23,23)
@@ -647,7 +650,10 @@ func fly_reward_coins() -> void:
 		tween.tween_callback(func():
 			coin.queue_free()
 			coin_label.text=str(displayed_coins+int(ceil(reward_coins*float(i+1)/10.0)))
-			AudioManager.play_fx("coin"))
+			AudioManager.play_fx("coin")
+			if i==9:
+				for b in win_buttons:
+					if is_instance_valid(b): b.disabled=false)
 
 func show_happy_family(parent: Node,center: Vector2) -> void:
 	var group:=Node2D.new()
