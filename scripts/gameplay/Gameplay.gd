@@ -181,7 +181,7 @@ func build_hud() -> void:
 		section_label=UI.label(hud,"PART 1 / %d"%sections,Rect2(500,83,175,26),18)
 	if bombs_left>0:
 		game_button("bomb",Rect2(28,1040,78,78),func(): bomb_armed=not bomb_armed if bombs_left>0 else false,Color("db7840"))
-		bomb_label=UI.label(hud,"%d BOMBS"%bombs_left,Rect2(20,1115,120,34),20)
+		bomb_label=UI.label(hud,"%d BOMBS"%bombs_left,Rect2(7,1120,120,34),20)
 	game_button("restart",Rect2(18,18,78,78),restart,Color("219fe2"))
 	game_button("settings",Rect2(105,18,78,78),pause_game,Color("eea527"))
 	displayed_coins=int(SaveManager.progress.get("coins",0))
@@ -568,7 +568,8 @@ func result_panel(success: bool,stars:=0) -> void:
 		show_happy_family(overlay,Vector2(360,555))
 		UI.label(overlay,"%d happy kittens  ·  %.1f seconds"%[rescued,elapsed],Rect2(100,640,520,42),25,Color("fff8e5"))
 		UI.image(overlay,"res://assets/ui/coin.png",Rect2(286,682,42,42))
-		UI.label(overlay,"+%d"%reward_coins,Rect2(333,679,120,45),31,Color("fff8e5"))
+		var reward_label:=UI.label(overlay,"+%d"%reward_coins,Rect2(338,679,140,45),31,Color("fff8e5"))
+		reward_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
 		UI.button(overlay,"NEXT LEVEL",Rect2(145,735,430,68),func(): SaveManager.daily_mode=false; SaveManager.level_number+=1; restart(),Color("65ab60"))
 		UI.button(overlay,"RETRY",Rect2(145,825,430,65),restart)
 		UI.button(overlay,"LEVEL SELECT",Rect2(145,915,430,65),func(): get_tree().change_scene_to_file("res://scenes/menus/LevelSelect.tscn"),Color("3298bd"))
@@ -650,7 +651,8 @@ func pause_game() -> void:
 	panel("SETTINGS",Rect2(70,160,580,945))
 	for i in 3:
 		var key: String=["music","effects","vibration"][i]
-		UI.label(overlay,["Music","Sound effects","Vibration"][i],Rect2(110,270+i*80,300,60),30,Color("fff8e5"))
+		var setting_label:=UI.label(overlay,["Music","Sound effects","Vibration"][i],Rect2(110,270+i*80,300,60),30,Color("fff8e5"))
+		setting_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
 		var toggle:=CheckButton.new()
 		toggle.position=Vector2(470,275+i*80)
 		toggle.size=Vector2(110,55)
@@ -684,7 +686,7 @@ func draw_foreground() -> void:
 		foreground.draw_circle(blast.point,30+age*(float(blast.get("radius",125))-30),Color(1,0.72,0.2,(1-age)*0.35))
 		foreground.draw_arc(blast.point,25+age*(float(blast.get("radius",130))-25),0,TAU,48,Color(1,0.92,0.65,1-age),6*(1-age),true)
 	if bomb_armed:
-		foreground.draw_string(UI.game_font(),Vector2(145,1080+camera_offset),"TAP STONE TO BLAST",HORIZONTAL_ALIGNMENT_LEFT,-1,25,Color("fff2cf"))
+		foreground.draw_string(UI.game_font(),Vector2(60,1080+camera_offset),"TAP STONE TO BLAST",HORIZONTAL_ALIGNMENT_CENTER,600,25,Color("fff2cf"))
 		for stone in data.terrain.get("rock_rects",[]):
 			var rect:=Rect2(stone[0],stone[1],stone[2],stone[3])
 			var cell:=Vector2i((rect.get_center()-terrain.position)/terrain.CELL)
@@ -699,7 +701,7 @@ func draw_foreground() -> void:
 		if particle.has("radius"): particle_color.a*=clampf(particle.life/0.15,0,1)
 		foreground.draw_circle(particle.p,float(particle.get("radius",3)),particle_color)
 	if debug_mode:
-		foreground.draw_string(ThemeDB.fallback_font,Vector2(40,1175),"FPS %d | chunks %d | cells %d"%[Engine.get_frames_per_second(),terrain.bodies.size(),terrain.removed],HORIZONTAL_ALIGNMENT_LEFT,-1,19,Color.GREEN)
+		foreground.draw_string(UI.game_font(),Vector2(40,1175),"FPS %d | chunks %d | cells %d"%[Engine.get_frames_per_second(),terrain.bodies.size(),terrain.removed],HORIZONTAL_ALIGNMENT_LEFT,-1,19,Color.GREEN)
 		for key in terrain.bodies:
 			foreground.draw_rect(Rect2(Vector2(key)*terrain.CELL*terrain.CHUNK+terrain.position,Vector2.ONE*terrain.CELL*terrain.CHUNK),Color(0.2,1,0.6,0.6),false,1)
 		for kitten in kittens:

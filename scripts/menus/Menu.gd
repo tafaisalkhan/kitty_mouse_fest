@@ -221,8 +221,8 @@ func shop_page() -> void:
 	scroll.add_child(body)
 	var chest:=Commerce.card(body,Rect2(8,8,610,255),Color("4359cc"),Color("7fea33"))
 	Commerce.icon(chest,0,Rect2(15,10,235,180))
-	Commerce.heading(chest,"FREE CHEST",Rect2(257,27,330,64),35)
-	UI.label(chest,"25 COINS",Rect2(266,98,295,46),30)
+	Commerce.heading(chest,"FREE CHEST",Rect2(255,27,330,64),35)
+	UI.label(chest,"25 COINS",Rect2(255,98,330,46),30)
 	var claimed: bool=SaveManager.progress.chest_date==Economy.today()
 	var ad_ok: bool=AdsService.rewarded_ready and not AdsService.no_fill_this_launch
 	var text:="CLAIMED TODAY" if claimed else "WATCH & OPEN"
@@ -243,14 +243,14 @@ func shop_page() -> void:
 		var pack: Dictionary=Economy.PACKS[key]
 		var tile:=Commerce.card(body,Rect2(8,295+index*250,610,220),Color("7640cd") if key=="rescue" else Color("5a86de"))
 		Commerce.icon(tile,1,Rect2(12,22,165,155))
-		Commerce.heading(tile,pack.title,Rect2(170,15,420,50),30)
-		UI.label(tile,"%d BOMBS  +  %d HINTS"%[pack.bombs,pack.hints],Rect2(165,70,425,45),25)
+		Commerce.heading(tile,pack.title,Rect2(180,15,410,50),30)
+		UI.label(tile,"%d BOMBS  +  %d HINTS"%[pack.bombs,pack.hints],Rect2(180,70,410,45),25)
 		UI.button(tile,"%d COINS"%pack.cost,Rect2(265,133,300,65),func(): Commerce.offer_popup(self,key,func(): show_page("Shop")),Color("55ce17"))
 		index+=1
 	var coffee:=Commerce.card(body,Rect2(8,1070,610,235),Color("405ac9"))
 	Commerce.icon(coffee,3,Rect2(8,25,180,165))
-	Commerce.heading(coffee,"SUPPORT THE DEV",Rect2(185,14,405,54),28)
-	UI.label(coffee,"A little coffee, more adventures",Rect2(178,72,418,42),21)
+	Commerce.heading(coffee,"SUPPORT THE DEV",Rect2(190,14,400,54),28)
+	UI.label(coffee,"A little coffee, more adventures",Rect2(190,72,400,42),21)
 	var buy:=UI.button(coffee,PlatformServices.coffee_price if not PlatformServices.coffee_price.is_empty() else "$1.99 · GOOGLE PLAY",Rect2(218,135,365,66),PlatformServices.buy_coffee,Color("55ce17"))
 	buy.disabled=PlatformServices.coffee_price.is_empty()
 
@@ -280,7 +280,7 @@ func header(title: String) -> void:
 	home.tooltip_text="Main menu"
 	home.pressed.connect(func(): show_page("MainMenu"))
 	content.add_child(home)
-	var title_label:=UI.label(content,title,Rect2(120,48,530,65),44)
+	var title_label:=UI.label(content,title,Rect2(120,48,480,65),44)
 	title_label.add_theme_font_override("font",UI.title_font())
 
 func levels_page() -> void:
@@ -314,19 +314,22 @@ func settings_page() -> void:
 	var rows:=[ ["Music","music"],["Sound effects","effects"],["Vibration","vibration"],["Left-handed tools","left_handed"],["Reduce motion","reduce_motion"] ]
 	var y:=175
 	for row in rows:
-		UI.label(content,row[0],Rect2(60,y,370,60),28)
+		var row_label:=UI.label(content,row[0],Rect2(60,y,370,60),28)
+		row_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
 		var check:=CheckButton.new()
 		check.position=Vector2(490,y)
 		check.size=Vector2(140,60)
 		check.text="ON"
 		check.button_pressed=SaveManager.settings[row[1]]
+		check.add_theme_font_override("font",UI.game_font())
 		check.add_theme_font_size_override("font_size",24)
 		var key: String=row[1]
 		check.toggled.connect(func(value): SaveManager.settings[key]=value; SaveManager.save_settings())
 		content.add_child(check)
 		y+=90
 	for pair in [["Music volume","music_volume"],["Effects volume","effects_volume"]]:
-		UI.label(content,pair[0],Rect2(60,y,260,65),24)
+		var vol_label:=UI.label(content,pair[0],Rect2(60,y,260,65),24)
+		vol_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
 		var slider:=HSlider.new()
 		slider.position=Vector2(345,y+15)
 		slider.size=Vector2(280,40)
@@ -340,6 +343,7 @@ func settings_page() -> void:
 	UI.button(content,"RATE GAME",Rect2(45,840,300,64),PlatformServices.rate_game,Color("5596dd"))
 	UI.button(content,"SHARE GAME",Rect2(375,840,300,64),PlatformServices.share_game,Color("5596dd"))
 	var coffee:=UI.button(content,"COFFEE · "+(PlatformServices.coffee_price if not PlatformServices.coffee_price.is_empty() else "$1.99"),Rect2(45,925,300,64),PlatformServices.buy_coffee,Color("c27c4d"))
+	coffee.add_theme_font_size_override("font_size",25)
 	coffee.disabled=PlatformServices.coffee_price.is_empty()
 	UI.button(content,"RESTORE",Rect2(375,925,300,64),PlatformServices.restore_purchases,Color("8568c2"))
 	UI.button(content,"DAILY CHALLENGE ALERT",Rect2(45,1010,630,64),func(): PlatformServices.update_notification(not SaveManager.settings.get("challenge_notifications",false)); show_page("Settings"),Color("65a852"))

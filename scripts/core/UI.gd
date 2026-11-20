@@ -69,6 +69,7 @@ static func button(parent: Node,text: String,rect: Rect2,action: Callable,color:
 	node.position=rect.position
 	node.size=rect.size
 	node.custom_minimum_size.y=58
+	node.alignment=HORIZONTAL_ALIGNMENT_CENTER
 	node.add_theme_font_size_override("font_size",29)
 	node.add_theme_font_override("font",title_font())
 	node.add_theme_color_override("font_color",Color("fff9ed"))
@@ -90,6 +91,8 @@ static func button(parent: Node,text: String,rect: Rect2,action: Callable,color:
 
 static func style_dialog(dialog: AcceptDialog) -> void:
 	dialog.theme=load("res://assets/ui/game_theme.tres")
+	dialog.get_label().horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	dialog.get_label().vertical_alignment=VERTICAL_ALIGNMENT_CENTER
 	dialog.get_label().add_theme_font_override("font",game_font())
 	dialog.get_label().add_theme_color_override("font_color",Color("fff8e5"))
 	dialog.get_label().add_theme_font_size_override("font_size",25)

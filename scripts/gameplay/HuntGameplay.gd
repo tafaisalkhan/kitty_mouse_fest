@@ -373,7 +373,8 @@ func result_panel(success: bool,stars:=0) -> void:
 		if SaveManager.trial_mode: UI.label(overlay,"Trial stars saved · Main progress unchanged",Rect2(95,685,530,50),21)
 		else:
 			UI.image(overlay,"res://assets/ui/coin.png",Rect2(286,689,38,38))
-			UI.label(overlay,"+%d"%reward_coins,Rect2(333,685,120,45),30)
+			var reward_label:=UI.label(overlay,"+%d"%reward_coins,Rect2(334,685,140,45),30)
+			reward_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
 		UI.button(overlay,"TRIAL SELECT" if SaveManager.trial_mode and SaveManager.trial_number==preload("res://scripts/generation/TrialLevels.gd").COUNT else "NEXT TRIAL" if SaveManager.trial_mode else "NEXT HUNT",Rect2(145,745,430,68),next_hunt,Color("65ab60"))
 		UI.button(overlay,"RETRY",Rect2(145,835,430,65),restart)
 		UI.button(overlay,"MAIN MENU",Rect2(145,925,430,65),func(): get_tree().change_scene_to_file("res://scenes/menus/MainMenu.tscn"),Color("3298bd"))
