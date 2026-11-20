@@ -45,8 +45,8 @@ theme/custom="res://assets/ui/game_theme.tres"
 
 [input_devices]
 
-sensors/enable_accelerometer=true
-sensors/enable_gravity=true
+sensors/enable_accelerometer=false
+sensors/enable_gravity=false
 
 [physics]
 
