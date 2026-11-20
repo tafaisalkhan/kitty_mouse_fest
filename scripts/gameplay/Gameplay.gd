@@ -582,13 +582,41 @@ func result_panel(success: bool,stars:=0) -> void:
 			rewards_animated=true
 			fly_reward_coins()
 		return
-	panel("LEVEL FAILED")
+	panel("LEVEL FAILED",Rect2(80,275,560,720))
 	animate_stars(0,false)
-	UI.label(overlay,"A safer path is waiting.",Rect2(100,495,520,50),27,Color("fff8e5"))
-	UI.label(overlay,"%d kittens rescued  ·  %.1f seconds"%[rescued,elapsed],Rect2(100,545,520,50),23,Color("fff8e5"))
-	UI.button(overlay,"RETRY WITH HINT",Rect2(145,635,430,68),func(): restart_with_hint(),Color("ae83c9"))
-	UI.button(overlay,"RETRY",Rect2(145,730,430,65),restart)
-	UI.button(overlay,"LEVEL SELECT",Rect2(145,820,430,65),func(): get_tree().change_scene_to_file("res://scenes/menus/LevelSelect.tscn"),Color("3298bd"))
+	UI.label(overlay,"A safer path is waiting.",Rect2(100,490,520,45),26,Color("fff8e5"))
+	UI.label(overlay,"%d kittens rescued  ·  %.1f seconds"%[rescued,elapsed],Rect2(100,535,520,42),22,Color("ffd8dc"))
+	var retry_hint_btn:=UI.button(overlay,"RETRY WITH HINT (%d COINS)"%Economy.RETRY_COST,Rect2(130,595,460,64),func(): pass,Color("ae83c9"))
+	retry_hint_btn.add_theme_font_size_override("font_size",24)
+	var retry_btn:=UI.button(overlay,"RETRY (%d COINS)"%Economy.RETRY_COST,Rect2(130,675,460,64),func(): pass)
+	retry_btn.add_theme_font_size_override("font_size",25)
+	var ad_btn:=UI.button(overlay,"WATCH AD (+%d COINS)"%Economy.AD_COIN_REWARD,Rect2(130,755,460,64),func(): pass,Color("55ce17"))
+	ad_btn.add_theme_font_size_override("font_size",24)
+	ad_btn.visible=not AdsService.no_fill_this_launch
+	var refresh_fail_buttons:=func():
+		var coins:=int(SaveManager.progress.get("coins",0))
+		retry_hint_btn.disabled=coins<Economy.RETRY_COST
+		retry_btn.disabled=coins<Economy.RETRY_COST
+		if is_instance_valid(coin_label): coin_label.text=str(coins)
+		if ad_btn.visible:
+			ad_btn.disabled=not AdsService.rewarded_ready
+			ad_btn.text="WATCH AD (+%d COINS)"%Economy.AD_COIN_REWARD if AdsService.rewarded_ready else "AD LOADING..."
+	retry_hint_btn.pressed.connect(func():
+		if Economy.spend_coins(Economy.RETRY_COST):
+			if is_instance_valid(coin_label): coin_label.text=str(SaveManager.progress.get("coins",0))
+			restart_with_hint()
+		else: refresh_fail_buttons.call())
+	retry_btn.pressed.connect(func():
+		if Economy.spend_coins(Economy.RETRY_COST):
+			if is_instance_valid(coin_label): coin_label.text=str(SaveManager.progress.get("coins",0))
+			restart()
+		else: refresh_fail_buttons.call())
+	ad_btn.pressed.connect(func():
+		AdsService.request_reward(func():
+			Economy.add_coins(Economy.AD_COIN_REWARD)
+			refresh_fail_buttons.call()))
+	refresh_fail_buttons.call()
+	UI.button(overlay,"LEVEL SELECT",Rect2(130,855 if ad_btn.visible else 775,460,64),func(): get_tree().change_scene_to_file("res://scenes/menus/LevelSelect.tscn"),Color("3298bd"))
 
 func animate_stars(stars: int,success: bool) -> void:
 	for i in 3:

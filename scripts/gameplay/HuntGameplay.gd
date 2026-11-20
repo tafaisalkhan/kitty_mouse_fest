@@ -383,14 +383,41 @@ func result_panel(success: bool,stars:=0) -> void:
 			rewards_animated=true
 			fly_reward_coins()
 	else:
-		panel("HUNT FAILED")
+		panel("HUNT FAILED",Rect2(80,275,560,720))
 		animate_stars(0,false)
-		var reason:=UI.label(overlay,failure_reason,Rect2(95,520,530,100),25)
+		var reason:=UI.label(overlay,failure_reason,Rect2(100,490,520,85),24)
 		reason.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
-		UI.label(overlay,"%d / %d mice eaten"%[mice_eaten,mice.size()],Rect2(110,615,500,45),25)
-		UI.button(overlay,"RETRY",Rect2(145,705,430,70),restart,Color("65ab60"))
-		UI.button(overlay,"SHOW SAFE PATH",Rect2(145,800,430,65),restart_with_hint)
-		UI.button(overlay,"MAIN MENU",Rect2(145,895,430,65),func(): get_tree().change_scene_to_file("res://scenes/menus/MainMenu.tscn"),Color("3298bd"))
+		var retry_btn:=UI.button(overlay,"RETRY (%d COINS)"%Economy.RETRY_COST,Rect2(130,595,460,64),func(): pass,Color("65ab60"))
+		retry_btn.add_theme_font_size_override("font_size",25)
+		var hint_btn:=UI.button(overlay,"SHOW SAFE PATH (%d COINS)"%Economy.RETRY_COST,Rect2(130,675,460,64),func(): pass)
+		hint_btn.add_theme_font_size_override("font_size",24)
+		var ad_btn:=UI.button(overlay,"WATCH AD (+%d COINS)"%Economy.AD_COIN_REWARD,Rect2(130,755,460,64),func(): pass,Color("55ce17"))
+		ad_btn.add_theme_font_size_override("font_size",24)
+		ad_btn.visible=not AdsService.no_fill_this_launch
+		var refresh_fail_buttons:=func():
+			var coins:=int(SaveManager.progress.get("coins",0))
+			retry_btn.disabled=coins<Economy.RETRY_COST
+			hint_btn.disabled=coins<Economy.RETRY_COST
+			if is_instance_valid(coin_label): coin_label.text=str(coins)
+			if ad_btn.visible:
+				ad_btn.disabled=not AdsService.rewarded_ready
+				ad_btn.text="WATCH AD (+%d COINS)"%Economy.AD_COIN_REWARD if AdsService.rewarded_ready else "AD LOADING..."
+		retry_btn.pressed.connect(func():
+			if Economy.spend_coins(Economy.RETRY_COST):
+				if is_instance_valid(coin_label): coin_label.text=str(SaveManager.progress.get("coins",0))
+				restart()
+			else: refresh_fail_buttons.call())
+		hint_btn.pressed.connect(func():
+			if Economy.spend_coins(Economy.RETRY_COST):
+				if is_instance_valid(coin_label): coin_label.text=str(SaveManager.progress.get("coins",0))
+				restart_with_hint()
+			else: refresh_fail_buttons.call())
+		ad_btn.pressed.connect(func():
+			AdsService.request_reward(func():
+				Economy.add_coins(Economy.AD_COIN_REWARD)
+				refresh_fail_buttons.call()))
+		refresh_fail_buttons.call()
+		UI.button(overlay,"MAIN MENU",Rect2(130,855 if ad_btn.visible else 775,460,64),func(): get_tree().change_scene_to_file("res://scenes/menus/MainMenu.tscn"),Color("3298bd"))
 
 func next_hunt() -> void:
 	SaveManager.daily_mode=false
