@@ -1,0 +1,61 @@
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+
+def gameRoot = projectDir.parentFile.parentFile
+def privateFile = new File(System.getenv('KITTY_ADMOB_CONFIG') ?: new File(gameRoot, 'admob_secrets.json').path)
+def secret = privateFile.isFile() ? new JsonSlurper().parse(privateFile) : [:]
+def keys = ['ADMOB_APP_ID','ADMOB_BANNER_ID','ADMOB_INTERSTITIAL_ID','ADMOB_REWARDED_ID']
+def valid = keys.every { k ->
+    def v = secret[k] ?: ''
+    v ==~ (k == 'ADMOB_APP_ID' ? /ca-app-pub-\d{16}~\d{10}/ : /ca-app-pub-\d{16}\/\d{10}/)
+} && keys.every { !(secret[it] ?: '').contains('3940256099942544') }
+def production = System.getenv('KITTY_PRODUCTION') == '1' || gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }
+if (production && !valid) throw new GradleException('Production export requires all four valid production AdMob IDs in the private config. No test or fallback IDs are supported.')
+
+dependencies {
+    implementation 'com.google.android.gms:play-services-ads:25.5.0'
+    implementation 'com.google.android.ump:user-messaging-platform:4.0.0'
+    implementation 'com.android.billingclient:billing:9.1.0'
+    implementation 'com.google.android.play:review:2.0.2'
+    implementation 'com.google.android.play:app-update:2.1.0'
+}
+android {
+    sourceSets.main.java.srcDir '../kitty/src'
+    defaultConfig {
+        manifestPlaceholders['ADMOB_APP_ID'] = valid ? secret.ADMOB_APP_ID : ''
+        buildConfigField 'boolean', 'KITTY_ADS_CONFIGURED', valid ? 'true' : 'false'
+    }
+}
+def manifest = file('src/main/AndroidManifest.xml')
+def original = new File(gameRoot, 'android/kitty/AndroidManifest.base.xml').text
+def extra = new File(gameRoot, 'android/kitty/manifest-services.xml').text
+if (!valid) extra += '\n<provider android:name="com.google.android.gms.ads.MobileAdsInitProvider" tools:node="remove" />\n'
+manifest.text = original.replace('</application>', extra + '\n</application>').replace('<application', '<uses-permission android:name="android.permission.INTERNET"/><uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><application')
+def assetsDir = file('build/generated/kitty-assets')
+android.sourceSets.main.assets.srcDir assetsDir
+def generateKittyAdUnits = tasks.register('generateKittyAdUnits') {
+    // Godot invokes clean and assemble in the same Gradle run. Generate after
+    // clean, not during configuration, so the runtime asset is packaged.
+    outputs.file new File(assetsDir, 'kitty_ad_units.json')
+    outputs.upToDateWhen { false }
+    doLast {
+        assetsDir.mkdirs()
+        new File(assetsDir, 'kitty_ad_units.json').text = JsonOutput.toJson(valid ? keys.findAll { it != 'ADMOB_APP_ID' }.collectEntries { [(it):secret[it]] } : [:])
+    }
+}
+generateKittyAdUnits.configure { mustRunAfter tasks.named('clean') }
+tasks.named('preBuild').configure { dependsOn generateKittyAdUnits }
+if (production) {
+    def signingFile = new File(System.getenv('KITTY_SIGNING_CONFIG') ?: new File(gameRoot, 'release_signing.json').path)
+    if (!signingFile.isFile()) throw new GradleException('Release signing config is missing.')
+    def signing = new JsonSlurper().parse(signingFile)
+    if (!['keystore_path','key_alias','store_password','key_password'].every { signing[it] }) throw new GradleException('Release signing config is incomplete.')
+    if (!new File(signing.keystore_path).isFile()) throw new GradleException('Release keystore is missing.')
+    android.signingConfigs.release {
+        storeFile new File(signing.keystore_path)
+        storePassword signing.store_password
+        keyAlias signing.key_alias
+        keyPassword signing.key_password
+    }
+    android.buildTypes.release.signingConfig android.signingConfigs.release
+}
