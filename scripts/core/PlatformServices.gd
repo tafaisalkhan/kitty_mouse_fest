@@ -6,6 +6,8 @@ var remove_ads_price:=""
 var pack_prices: Dictionary={}
 var ads_removed:=false
 var commerce_started:=false
+var play_games_started:=false
+var play_games_player:=""
 var updates_checked:=false
 var update_available:=false
 var update_downloaded:=false
@@ -49,6 +51,8 @@ func on_event(kind: String,payload: String) -> void:
 	if kind=="ads_removed": ads_removed=payload=="true"
 	if kind=="update_available": update_available=true
 	if kind=="update_downloaded": update_downloaded=true
+	if kind=="play_games_signed_in": play_games_player=payload
+	if kind=="play_games_sign_in_failed": play_games_player=""
 	service_event.emit(kind,payload)
 
 func enter_home() -> void:
@@ -56,10 +60,17 @@ func enter_home() -> void:
 	if not commerce_started:
 		commerce_started=true
 		native.start_commerce()
+	if not play_games_started:
+		play_games_started=true
+		native.sign_in_play_games()
 	if not updates_checked:
 		updates_checked=true
 		native.check_updates()
 	if SaveManager.settings.get("challenge_notifications",false): update_notification(true)
+
+func sign_in_play_games() -> void:
+	if native: native.sign_in_play_games()
+	else: service_event.emit("message","Google Play Games sign-in is available on Android.")
 
 func rate_game() -> void:
 	if native: native.rate_game()

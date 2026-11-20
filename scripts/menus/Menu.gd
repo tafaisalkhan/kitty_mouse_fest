@@ -170,10 +170,9 @@ func open_daily() -> void:
 		Commerce.daily_popup(self,func(): show_page("MainMenu"))
 
 func service_event(kind: String,payload: String) -> void:
-	if kind in ["pack_price","coins_purchased"]:
+	if kind in ["pack_price","coins_purchased","play_games_signed_in"]:
 		if kind=="coins_purchased": message("Coins Added!","+%s coins have been added to your balance."%payload)
-		if page=="Shop": show_page("Shop")
-		elif page=="MainMenu": show_page("MainMenu")
+		if page in ["Shop","Leaderboard","Achievements","MainMenu"]: show_page(page)
 	if kind in ["message","restore_complete"]: message("Kitty Hunt",payload)
 	elif kind in ["update_available","update_downloaded"] and page=="MainMenu":
 		if PlatformServices.update_prompts.get(kind,false): return
@@ -325,7 +324,11 @@ func leaderboard_page() -> void:
 		rank_lbl.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
 		var score_lbl:=UI.label(card,"%d pts · %d lvls"%[row.score,row.levels],Rect2(345,18,260,70),23,Color("fff8e5"))
 		score_lbl.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
-	UI.label(content,"Play Games Project ID: 737017468138",Rect2(45,1075,630,45),20,Color("ffe074"))
+	if PlatformServices.play_games_player.is_empty():
+		var pg_btn:=UI.button(content,"SIGN IN · GOOGLE PLAY",Rect2(135,1065,450,58),PlatformServices.sign_in_play_games,Color("55ce17"))
+		pg_btn.add_theme_font_size_override("font_size",23)
+	else:
+		UI.label(content,"Google Play: %s ✓"%PlatformServices.play_games_player,Rect2(45,1072,630,45),22,Color("d8ffba"))
 	UI.button(content,"BACK TO MENU",Rect2(165,1150,390,64),func(): show_page("MainMenu"),Color("3298bd"))
 
 func achievements_page() -> void:

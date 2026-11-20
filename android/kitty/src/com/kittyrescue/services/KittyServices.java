@@ -11,6 +11,9 @@ import com.godot.game.BuildConfig;
 import com.google.android.play.core.review.ReviewManagerFactory;
 import com.google.android.play.core.appupdate.*;
 import com.google.android.play.core.install.model.*;
+import com.google.android.gms.games.GamesSignInClient;
+import com.google.android.gms.games.PlayGames;
+import com.google.android.gms.games.PlayGamesSdk;
 import java.util.*;
 
 public final class KittyServices extends GodotPlugin {
@@ -75,6 +78,33 @@ public final class KittyServices extends GodotPlugin {
                 catch (Exception e) { event("message", "Open Google Play to update Kitty Rescue."); }
             }
         });
+    }); }
+    @UsedByGodot public void sign_in_play_games() { runOnUiThread(() -> {
+        try {
+            PlayGamesSdk.initialize(getActivity());
+            GamesSignInClient signInClient = PlayGames.getGamesSignInClient(getActivity());
+            signInClient.isAuthenticated().addOnCompleteListener(task -> {
+                boolean isAuth = task.isSuccessful() && task.getResult() != null && task.getResult().isAuthenticated();
+                if (isAuth) {
+                    PlayGames.getPlayersClient(getActivity()).getCurrentPlayer()
+                        .addOnSuccessListener(player -> event("play_games_signed_in", player.getDisplayName()))
+                        .addOnFailureListener(e -> event("play_games_signed_in", "Player"));
+                } else {
+                    signInClient.signIn().addOnCompleteListener(signTask -> {
+                        boolean ok = signTask.isSuccessful() && signTask.getResult() != null && signTask.getResult().isAuthenticated();
+                        if (ok) {
+                            PlayGames.getPlayersClient(getActivity()).getCurrentPlayer()
+                                .addOnSuccessListener(player -> event("play_games_signed_in", player.getDisplayName()))
+                                .addOnFailureListener(e -> event("play_games_signed_in", "Player"));
+                        } else {
+                            event("play_games_sign_in_failed", "");
+                        }
+                    });
+                }
+            });
+        } catch (Exception e) {
+            event("play_games_sign_in_failed", e.getMessage() != null ? e.getMessage() : "");
+        }
     }); }
     @UsedByGodot public void complete_update() { runOnUiThread(() -> { if (updates != null) updates.completeUpdate(); }); }
     @UsedByGodot public boolean notifications_allowed() { return Build.VERSION.SDK_INT < 33 || getActivity().checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED; }
