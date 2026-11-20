@@ -56,9 +56,9 @@ static func label(parent: Node, text: String, rect: Rect2, size:=28, color:=Colo
 	if game_font(): node.add_theme_font_override("font",game_font())
 	node.add_theme_color_override("font_color",color)
 	node.add_theme_color_override("font_outline_color",Color("422638"))
-	node.add_theme_constant_override("outline_size",2)
-	node.add_theme_color_override("font_shadow_color",Color(0.1,0.1,0.15,0.35))
-	node.add_theme_constant_override("shadow_offset_y",2)
+	node.add_theme_constant_override("outline_size",4)
+	node.add_theme_color_override("font_shadow_color",Color(0.1,0.1,0.15,0.4))
+	node.add_theme_constant_override("shadow_offset_y",3)
 	node.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	parent.add_child(node)
 	return node
@@ -70,15 +70,15 @@ static func button(parent: Node,text: String,rect: Rect2,action: Callable,color:
 	node.size=rect.size
 	node.custom_minimum_size.y=58
 	node.alignment=HORIZONTAL_ALIGNMENT_CENTER
-	node.add_theme_font_size_override("font_size",29)
-	node.add_theme_font_override("font",title_font())
+	node.add_theme_font_size_override("font_size",28)
+	node.add_theme_font_override("font",game_font())
 	node.add_theme_color_override("font_color",Color("fff9ed"))
 	node.add_theme_color_override("font_hover_color",Color("fffdf0"))
 	node.add_theme_color_override("font_pressed_color",Color("fff0bc"))
 	node.add_theme_color_override("font_focus_color",Color("fffdf0"))
 	node.add_theme_color_override("font_disabled_color",Color("d5cdbb"))
-	node.add_theme_color_override("font_outline_color",color.darkened(0.4))
-	node.add_theme_constant_override("outline_size",3)
+	node.add_theme_color_override("font_outline_color",color.darkened(0.45))
+	node.add_theme_constant_override("outline_size",5)
 	node.add_theme_stylebox_override("normal",preload("res://scripts/core/DepthStyle.gd").box(color))
 	node.add_theme_stylebox_override("hover",preload("res://scripts/core/DepthStyle.gd").box(color.lightened(0.09)))
 	node.add_theme_stylebox_override("pressed",preload("res://scripts/core/DepthStyle.gd").box(color.darkened(0.08),Color.TRANSPARENT,true))
@@ -101,7 +101,7 @@ static func style_dialog(dialog: AcceptDialog) -> void:
 	if dialog is ConfirmationDialog: buttons.append(dialog.get_cancel_button())
 	for button in buttons:
 		button.custom_minimum_size=Vector2(150,55)
-		button.add_theme_font_override("font",title_font())
+		button.add_theme_font_override("font",game_font())
 		button.add_theme_font_size_override("font_size",25)
 		button.add_theme_stylebox_override("normal",box(Color("65aa42"),15))
 		button.add_theme_stylebox_override("hover",box(Color("7bbf51"),15))

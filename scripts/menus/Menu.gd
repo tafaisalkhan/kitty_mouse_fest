@@ -92,7 +92,7 @@ func main_page() -> void:
 		float_tween.tween_property(hero,"position:y",435.0,2.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	var play:=UI.button(content,"PLAY",Rect2(143,866,434,112),func(): start(int(SaveManager.progress.highest_unlocked)),Color("55ce17"))
 	play.add_theme_font_size_override("font_size",49)
-	UI.label(content,"LEVEL %d · ENDLESS BURROWS"%int(SaveManager.progress.highest_unlocked),Rect2(130,988,460,35),21,Color("fff8e5"))
+	UI.label(content,"LEVEL %d · ENDLESS BURROWS"%int(SaveManager.progress.highest_unlocked),Rect2(130,988,460,35),21,Color("d8ffba"))
 	var no_ads:=UI.button(content,"ADS REMOVED" if PlatformServices.ads_removed else "REMOVE ADS · "+(PlatformServices.remove_ads_price if not PlatformServices.remove_ads_price.is_empty() else "$4.99"),Rect2(165,370,390,58),PlatformServices.buy_remove_ads,Color("bd64cf"))
 	no_ads.add_theme_font_size_override("font_size",25)
 	no_ads.disabled=PlatformServices.ads_removed or PlatformServices.remove_ads_price.is_empty()
@@ -209,7 +209,7 @@ func shop_page() -> void:
 		content.add_child(stripe)
 	header("SHOP")
 	UI.wallet(content,Vector2(490,125),int(SaveManager.progress.coins))
-	UI.label(content,"BOMBS %d   ·   HINTS %d"%[SaveManager.progress.boosters.bombs,SaveManager.progress.boosters.hints],Rect2(55,130,420,42),23)
+	UI.label(content,"BOMBS %d   ·   HINTS %d"%[SaveManager.progress.boosters.bombs,SaveManager.progress.boosters.hints],Rect2(55,130,420,42),23,Color("ffe074"))
 	UI.button(content,"POWERS",Rect2(50,243,290,60),func(): shop_tab="powers"; show_page("Shop"),Color("8656d9") if shop_tab=="powers" else Color("4166b2"))
 	UI.button(content,"GET COINS",Rect2(375,243,290,60),func(): shop_tab="coins"; show_page("Shop"),Color("8656d9") if shop_tab=="coins" else Color("4166b2"))
 	var scroll:=ScrollContainer.new()
@@ -222,7 +222,7 @@ func shop_page() -> void:
 	var chest:=Commerce.card(body,Rect2(8,8,610,255),Color("4359cc"),Color("7fea33"))
 	Commerce.icon(chest,0,Rect2(15,10,235,180))
 	Commerce.heading(chest,"FREE CHEST",Rect2(255,27,330,64),35)
-	UI.label(chest,"25 COINS",Rect2(255,98,330,46),30)
+	UI.label(chest,"25 COINS",Rect2(255,98,330,46),30,Color("ffe566"))
 	var claimed: bool=SaveManager.progress.chest_date==Economy.today()
 	var ad_ok: bool=AdsService.rewarded_ready and not AdsService.no_fill_this_launch
 	var text:="CLAIMED TODAY" if claimed else "WATCH & OPEN"
@@ -280,14 +280,16 @@ func header(title: String) -> void:
 	home.tooltip_text="Main menu"
 	home.pressed.connect(func(): show_page("MainMenu"))
 	content.add_child(home)
-	var title_label:=UI.label(content,title,Rect2(120,48,480,65),44)
+	var title_label:=UI.label(content,title,Rect2(120,48,480,65),44,Color("ffe46b"))
 	title_label.add_theme_font_override("font",UI.title_font())
+	title_label.add_theme_color_override("font_outline_color",Color("5b2d6e"))
+	title_label.add_theme_constant_override("outline_size",8)
 
 func levels_page() -> void:
 	header("YOUR ADVENTURE")
 	var worlds:=["Sandy Beginnings","Rolling Trouble","Rotating Machines","Dangerous Tunnels","Underground Adventure","Mechanical Mayhem","Water and Wind","Portal Puzzles","Expert Rescue","Master of Sand"]
-	UI.label(content,"WORLD %d  ·  ENDLESS ADVENTURE"%(world_index+1),Rect2(100,145,520,35),21)
-	UI.label(content,worlds[world_index%worlds.size()],Rect2(100,188,520,55),32)
+	UI.label(content,"WORLD %d  ·  ENDLESS ADVENTURE"%(world_index+1),Rect2(100,145,520,35),21,Color("ffd86b"))
+	UI.label(content,worlds[world_index%worlds.size()],Rect2(100,188,520,55),32,Color("fff9e8"))
 	UI.button(content,"‹",Rect2(35,185,60,60),func(): world_index=maxi(0,world_index-1); show_page("LevelSelect"))
 	UI.button(content,"›",Rect2(625,185,60,60),func(): world_index=mini(int((int(SaveManager.progress.highest_unlocked)-1)/20)+1,world_index+1); show_page("LevelSelect"))
 	var scroll:=ScrollContainer.new()

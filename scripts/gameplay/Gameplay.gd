@@ -179,10 +179,10 @@ func build_hud() -> void:
 		sky.size=Vector2(720,190)
 		sky.mouse_filter=Control.MOUSE_FILTER_IGNORE
 		hud.add_child(sky)
-		section_label=UI.label(hud,"PART 1 / %d"%sections,Rect2(500,83,175,26),18)
+		section_label=UI.label(hud,"PART 1 / %d"%sections,Rect2(500,83,175,26),18,Color("ffe780"))
 	if bombs_left>0:
 		game_button("bomb",Rect2(28,1040,78,78),func(): bomb_armed=not bomb_armed if bombs_left>0 else false,Color("db7840"))
-		bomb_label=UI.label(hud,"%d BOMBS"%bombs_left,Rect2(7,1120,120,34),20)
+		bomb_label=UI.label(hud,"%d BOMBS"%bombs_left,Rect2(7,1120,120,34),20,Color("ffd479"))
 	game_button("restart",Rect2(18,18,78,78),restart,Color("219fe2"))
 	game_button("settings",Rect2(105,18,78,78),pause_game,Color("eea527"))
 	displayed_coins=int(SaveManager.progress.get("coins",0))
@@ -197,7 +197,8 @@ func build_hud() -> void:
 	hud.add_child(title)
 	var level_title:="DAILY" if SaveManager.daily_mode else "Level %d"%SaveManager.level_number
 	if SaveManager.trial_mode: level_title="TRIAL %d"%SaveManager.trial_number
-	UI.label(hud,level_title,Rect2(240,23,244,61),maxi(22,36-maxi(0,level_title.length()-9)*2))
+	var title_text:=UI.label(hud,level_title,Rect2(240,23,244,61),maxi(22,36-maxi(0,level_title.length()-9)*2),Color("ffe98a"))
+	title_text.add_theme_color_override("font_outline_color",Color("5e2b10"))
 	var hint_x:=22 if SaveManager.settings.left_handed else 600
 	game_button("hint",Rect2(hint_x,18,78,78),toggle_hint,Color("efb92b"))
 	time_label=UI.label(hud,"",Rect2(513,47,88,32),19)
@@ -552,9 +553,11 @@ func panel(title: String,rect:=Rect2(70,335,580,615)) -> void:
 	bg.size=rect.size
 	bg.add_theme_stylebox_override("panel",UI.box(Color("fff0cd"),35))
 	overlay.add_child(bg)
-	var heading:=UI.label(overlay,title,Rect2(rect.position+Vector2(20,24),Vector2(rect.size.x-40,70)),43)
+	var heading_color:=Color("ff9e9e") if "FAILED" in title else Color("ffe368")
+	var heading_outline:=Color("5c1f2e") if "FAILED" in title else Color("7a3b18")
+	var heading:=UI.label(overlay,title,Rect2(rect.position+Vector2(20,24),Vector2(rect.size.x-40,70)),43,heading_color)
 	heading.add_theme_font_override("font",UI.title_font())
-	heading.add_theme_color_override("font_outline_color",Color("88502c"))
+	heading.add_theme_color_override("font_outline_color",heading_outline)
 	heading.add_theme_constant_override("outline_size",9)
 	# Pop the card into view while the background shade stays stationary.
 	bg.pivot_offset=bg.size/2
@@ -570,7 +573,7 @@ func result_panel(success: bool,stars:=0) -> void:
 		show_happy_family(overlay,Vector2(360,555))
 		UI.label(overlay,"%d happy kittens  ·  %.1f seconds"%[rescued,elapsed],Rect2(100,640,520,42),25,Color("fff8e5"))
 		UI.image(overlay,"res://assets/ui/coin.png",Rect2(286,682,42,42))
-		var reward_label:=UI.label(overlay,"+%d"%reward_coins,Rect2(338,679,140,45),31,Color("fff8e5"))
+		var reward_label:=UI.label(overlay,"+%d"%reward_coins,Rect2(338,679,140,45),31,Color("ffe45e"))
 		reward_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
 		UI.button(overlay,"NEXT LEVEL",Rect2(145,735,430,68),func(): SaveManager.daily_mode=false; SaveManager.level_number+=1; restart(),Color("65ab60"))
 		UI.button(overlay,"RETRY",Rect2(145,825,430,65),restart)
