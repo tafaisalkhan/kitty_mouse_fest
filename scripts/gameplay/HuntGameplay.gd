@@ -193,20 +193,20 @@ func _physics_process(delta: float) -> void:
 		elif clearing: steer_toward_base()
 		elif section_index==0 and cat.supported and cat.position.y<surface_y: walk_on_surface()
 		else: steer_toward_prey(delta)
+	if mice_eaten>=mice.size():
+		last_meal_age+=delta
+		if last_meal_age>=0.5 and (simulation_mode or cat.visual.eating_time<=0): complete_hunt()
+		return
 	for mouse in mice:
 		if int(mouse.config.section)==section_index and not mouse.eaten:
 			if simulation_mode: elapsed+=delta
 			return
 	# Enter the next room through its central opening, rather than opening the
 	# gate while Kitty is still at a side pocket outside the next room's entry.
-	if clearing and absf(cat.position.x-360)>12: return
+	if clearing and section_index<sections-1 and absf(cat.position.x-360)>12: return
 	if section_index==sections-1:
 		last_meal_age+=delta
-		var at_finish: bool=not data.get("finish_at_base",false) or cat.position.y>=1150+960*section_index-cat.radius-18
-		var settled: bool=cat.supported and cat.linear_velocity.length()<45 and at_finish
-		landing_settle_time=landing_settle_time+delta if settled else 0.0
-		if is_instance_valid(base_visual): base_visual.set_arrivals(1 if settled else 0)
-		if last_meal_age>=1.6 and landing_settle_time>=0.35 and (simulation_mode or cat.visual.eating_time<=0): complete_hunt()
+		if last_meal_age>=0.5 and (simulation_mode or cat.visual.eating_time<=0): complete_hunt()
 		return
 	super._physics_process(delta)
 
