@@ -1,5 +1,6 @@
 <meta-data android:name="org.godotengine.plugin.v2.KittyServices" android:value="com.kittyrescue.services.KittyServices" />
 <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="${ADMOB_APP_ID}" />
+<meta-data android:name="com.google.android.gms.games.APP_ID" android:value="@string/game_services_project_id" />
 <receiver android:name="com.kittyrescue.services.ChallengeReceiver" android:exported="false" />
 <receiver android:name="com.kittyrescue.services.ChallengeBootReceiver" android:exported="true">
     <intent-filter>
