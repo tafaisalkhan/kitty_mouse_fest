@@ -334,6 +334,9 @@ func stop_hazards() -> void:
 	super.stop_hazards()
 	for mouse in mice: mouse.set_physics_process(false)
 
+func on_time_expired() -> void:
+	failure_reason="Time's up! Dig a faster path next time."
+
 func fail(victim=null) -> void:
 	if ended: return
 	super.fail(victim)

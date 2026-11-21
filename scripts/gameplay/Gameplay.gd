@@ -8,6 +8,7 @@ var kittens: Array=[]
 var obstacles: Dictionary={}
 var rescued:=0
 var elapsed:=0.0
+var time_limit:=60.0
 var ended:=false
 var paused:=false
 var dragging:=false
@@ -72,6 +73,7 @@ func _ready() -> void:
 		UI.button(self,"MAIN MENU",Rect2(140,800,440,70),func(): get_tree().change_scene_to_file("res://scenes/menus/MainMenu.tscn"))
 		return
 	sections=int(data.get("sections",1))
+	time_limit=maxf(60.0,float(sections)*60.0)
 	free_bombs_left=int(data.get("bombs",2)) if not data.terrain.get("rock_rects",[]).is_empty() else 0
 	bombs_left=free_bombs_left+int(SaveManager.progress.boosters.get("bombs",0)) if free_bombs_left>0 else 0
 	if data.get("trial",false): bombs_left=free_bombs_left
@@ -316,11 +318,17 @@ func _process(delta: float) -> void:
 			face_attention_clock=0.12
 			update_face_attention()
 	if not ended: elapsed+=delta
+	var remaining: float=maxf(0.0,time_limit-elapsed)
 	dig_sound_timer-=delta
 	if is_instance_valid(progress_label):
 		progress_label.text="♥  %d / %d kittens home"%[rescued,kittens.size()]
 	if is_instance_valid(time_label):
-		time_label.text="%02d:%02d"%[int(elapsed)/60,int(elapsed)%60]
+		var shown_sec: int=int(ceil(remaining))
+		time_label.text="%02d:%02d"%[shown_sec/60,shown_sec%60]
+		time_label.add_theme_color_override("font_color",Color("ff7a7a") if remaining<=10.0 else Color("fff9e8"))
+	if not ended and not simulation_mode and not test_mode and remaining<=0.0:
+		if has_method("on_time_expired"): call("on_time_expired")
+		fail(kittens[0] if not kittens.is_empty() else null)
 	for i in range(particles.size()-1,-1,-1):
 		particles[i].life-=delta
 		particles[i].v.y+=400*delta
