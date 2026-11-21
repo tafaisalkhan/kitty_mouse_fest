@@ -75,7 +75,7 @@ func sign_in_play_games() -> void:
 	else: service_event.emit("message","Google Play Games sign-in is available on Android.")
 
 func player_score() -> int:
-	return SaveManager.progress.get("completed",{}).size()*150+SaveManager.stars_total()*50+int(SaveManager.progress.get("coins",0))
+	return SaveManager.progress.get("completed",{}).size()*150+int(SaveManager.progress.get("coins",0))
 
 func submit_leaderboard_score() -> void:
 	if native: native.submit_score(player_score())

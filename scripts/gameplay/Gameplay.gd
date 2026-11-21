@@ -620,17 +620,8 @@ func result_panel(success: bool,stars:=0) -> void:
 	refresh_fail_buttons.call()
 	UI.button(overlay,"LEVEL SELECT",Rect2(130,855 if ad_btn.visible else 775,460,64),func(): get_tree().change_scene_to_file("res://scenes/menus/LevelSelect.tscn"),Color("3298bd"))
 
-func animate_stars(stars: int,success: bool) -> void:
-	for i in 3:
-		var star:=UI.image(overlay,"res://assets/ui/star.png",Rect2(232+i*90,340 if success else 425,76,76))
-		star.pivot_offset=Vector2(38,38)
-		if i>=stars: star.modulate=Color(0.38,0.32,0.27,0.42)
-		if not SaveManager.settings.reduce_motion:
-			star.scale=Vector2.ZERO
-			var tween:=create_tween()
-			tween.tween_interval(0.15+i*0.18)
-			tween.tween_property(star,"scale",Vector2.ONE,0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			if i<stars: tween.tween_callback(func(): AudioManager.play_fx("star"))
+func animate_stars(_stars: int,_success: bool) -> void:
+	pass
 
 func fly_reward_coins(win_buttons: Array[Button]=[]) -> void:
 	if reward_coins<=0 or not is_instance_valid(coin_label): return

@@ -65,8 +65,6 @@ func main_page() -> void:
 	PlatformServices.enter_home()
 	var bar:=Commerce.card(content,Rect2(-10,-20,740,168),Color("2132a0"),Color("ffc643"))
 	wallet_label=UI.wallet(content,Vector2(500,47),int(SaveManager.progress.coins))
-	UI.image(content,"res://assets/ui/star.png",Rect2(319,47,55,55))
-	UI.label(content,str(SaveManager.stars_total()),Rect2(379,47,90,55),30)
 	var gear=load("res://scripts/core/GameButton.gd").new()
 	gear.kind="settings"
 	gear.base=Color("bd64cf")
@@ -250,8 +248,8 @@ func levels_page() -> void:
 	for index in 20:
 		var level:=world_index*20+index+1
 		var unlocked:=level<=int(SaveManager.progress.highest_unlocked)
-		var stars:=int(SaveManager.progress.completed.get(str(level),{}).get("stars",0))
-		var text:="%d\n%s"%[level,"★".repeat(stars)+"☆".repeat(3-stars)] if unlocked else "%d\nLOCKED"%level
+		var completed:=SaveManager.progress.completed.has(str(level))
+		var text:="%d\n✓"%level if completed else str(level) if unlocked else "%d\nLOCKED"%level
 		var button:=UI.button(grid,text,Rect2(0,0,140,125),func(): start(level),Color("64a85d") if unlocked else Color("7c9a9f"))
 		button.custom_minimum_size=Vector2(140,125)
 		button.disabled=not unlocked
@@ -311,12 +309,11 @@ func leaderboard_page() -> void:
 	Economy.left_home=true
 	header("LEADERBOARD")
 	var cleared: int=SaveManager.progress.get("completed",{}).size()
-	var stars: int=SaveManager.stars_total()
 	var coins: int=int(SaveManager.progress.get("coins",0))
 	var my_score: int=PlatformServices.player_score()
 	var my_card:=Commerce.card(content,Rect2(45,175,630,220),Color("3f5fe6"),Color("ffcb45"))
 	Commerce.heading(my_card,"YOUR SCORE: %d"%my_score,Rect2(20,24,590,56),38)
-	UI.label(my_card,"%d Levels Cleared  ·  %d Stars"%[cleared,stars],Rect2(20,96,590,42),24,Color("d8ffba"))
+	UI.label(my_card,"%d Levels Cleared"%cleared,Rect2(20,96,590,42),24,Color("d8ffba"))
 	UI.label(my_card,"%d Coins Balance"%coins,Rect2(20,144,590,42),24,Color("ffe566"))
 	var status_card:=Commerce.card(content,Rect2(45,440,630,310),Color("4a5cb8"),Color("8cb4ff"))
 	var player_title: String="Signed in as %s ✓"%PlatformServices.play_games_player if not PlatformServices.play_games_player.is_empty() else "Google Play Games"
@@ -336,14 +333,13 @@ func achievements_page() -> void:
 	Economy.left_home=true
 	header("ACHIEVEMENTS")
 	var cleared: int=SaveManager.progress.get("completed",{}).size()
-	var stars: int=SaveManager.stars_total()
 	var coins: int=int(SaveManager.progress.get("coins",0))
 	var streak: int=int(Economy.daily_status().day)
 	var list: Array=[
 		{"title":"FIRST CATCH","desc":"Complete your first level","cur":mini(cleared,1),"goal":1},
 		{"title":"BURROW EXPLORER","desc":"Complete 5 levels","cur":mini(cleared,5),"goal":5},
 		{"title":"MASTER HUNTER","desc":"Complete 20 levels","cur":mini(cleared,20),"goal":20},
-		{"title":"STAR COLLECTOR","desc":"Earn 15 stars","cur":mini(stars,15),"goal":15},
+		{"title":"COIN COLLECTOR","desc":"Hold 100 coins","cur":mini(coins,100),"goal":100},
 		{"title":"COIN HOARDER","desc":"Hold 500 coins","cur":mini(coins,500),"goal":500},
 		{"title":"DAILY REGULAR","desc":"Reach a 3-day streak","cur":mini(streak,3),"goal":3}
 	]
