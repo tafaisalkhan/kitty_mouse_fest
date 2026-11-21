@@ -133,10 +133,75 @@ func dig_segment(a: Vector2,b: Vector2) -> int:
 	var steps := maxi(1,ceili(a.distance_to(b)/maxf(4.0,brush*0.16)))
 	for i in range(steps+1):
 		carve(a.lerp(b,float(i)/steps)-position,brush,true)
-	if removed>before and not pending:
-		pending = true
-		call_deferred("rebuild")
+	if removed>before:
+		var la:=a-position
+		var lb:=b-position
+		var pad: float=brush+CELL*3.0
+		var min_x: int=maxi(0,floori((minf(la.x,lb.x)-pad)/CELL))
+		var max_x: int=mini(COLS-1,ceili((maxf(la.x,lb.x)+pad)/CELL))
+		var min_y: int=maxi(0,floori((minf(la.y,lb.y)-pad)/CELL))
+		var max_y: int=mini(ROWS-1,ceili((maxf(la.y,lb.y)+pad)/CELL))
+		cleanup_stray_sand(min_x,max_x,min_y,max_y)
+		if not pending:
+			pending = true
+			call_deferred("rebuild")
 	return removed-before
+
+func cleanup_stray_sand(min_x: int,max_x: int,min_y: int,max_y: int) -> void:
+	# Pass 1: remove isolated 1-cell spikes/specks along the dug boundary.
+	for _pass in 2:
+		var spikes: Array[Vector2i]=[]
+		for y in range(min_y,max_y+1):
+			for x in range(min_x,max_x+1):
+				if cells[y*COLS+x]!=1: continue
+				var neighbors: int=0
+				if x>0 and cells[y*COLS+x-1]>0: neighbors+=1
+				if x+1<COLS and cells[y*COLS+x+1]>0: neighbors+=1
+				if y>0 and cells[(y-1)*COLS+x]>0: neighbors+=1
+				if y+1<ROWS and cells[(y+1)*COLS+x]>0: neighbors+=1
+				if neighbors<=1: spikes.append(Vector2i(x,y))
+		if spikes.is_empty(): break
+		for p in spikes:
+			cells[p.y*COLS+p.x]=0
+			removed+=1
+			dirty[Vector2i(p.x/CHUNK,p.y/CHUNK)]=true
+	# Pass 2: remove small floating sand crumbs (<= 24 cells) detached from walls/bricks.
+	var visited: Dictionary={}
+	const MAX_CRUMB_CELLS:=24
+	for y in range(min_y,max_y+1):
+		for x in range(min_x,max_x+1):
+			var start_idx: int=y*COLS+x
+			if cells[start_idx]!=1 or visited.has(start_idx): continue
+			var queue: Array[Vector2i]=[Vector2i(x,y)]
+			var cluster: Array[Vector2i]=[]
+			visited[start_idx]=true
+			var anchored: bool=false
+			var head: int=0
+			while head<queue.size():
+				var cur: Vector2i=queue[head]
+				head+=1
+				cluster.append(cur)
+				if cur.x==0 or cur.x==COLS-1 or cur.y==0 or cur.y==ROWS-1:
+					anchored=true
+				if cluster.size()>MAX_CRUMB_CELLS:
+					anchored=true
+					break
+				for dir in [Vector2i(-1,0),Vector2i(1,0),Vector2i(0,-1),Vector2i(0,1)]:
+					var nx: int=cur.x+dir.x
+					var ny: int=cur.y+dir.y
+					if nx<0 or nx>=COLS or ny<0 or ny>=ROWS: continue
+					var nidx: int=ny*COLS+nx
+					var nval: int=cells[nidx]
+					if nval==2 or nval==3:
+						anchored=true
+					elif nval==1 and not visited.has(nidx):
+						visited[nidx]=true
+						queue.append(Vector2i(nx,ny))
+			if not anchored:
+				for p in cluster:
+					cells[p.y*COLS+p.x]=0
+					removed+=1
+					dirty[Vector2i(p.x/CHUNK,p.y/CHUNK)]=true
 
 func carve(center: Vector2,radius: float,mark: bool) -> void:
 	for y in range(maxi(0,floori((center.y-radius)/CELL)),mini(ROWS,ceili((center.y+radius)/CELL))):
