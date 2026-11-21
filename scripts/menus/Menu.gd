@@ -258,7 +258,7 @@ func levels_page() -> void:
 	for index in 20:
 		var level:=world_index*20+index+1
 		var unlocked:=level<=int(SaveManager.progress.highest_unlocked)
-		var completed:=SaveManager.progress.completed.has(str(level))
+		var completed: bool=SaveManager.progress.completed.has(str(level))
 		var text:="%d\n✓"%level if completed else str(level) if unlocked else "%d\nLOCKED"%level
 		var button:=UI.button(grid,text,Rect2(0,0,140,125),func(): start(level),Color("64a85d") if unlocked else Color("7c9a9f"))
 		button.custom_minimum_size=Vector2(140,125)
