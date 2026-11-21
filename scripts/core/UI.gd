@@ -48,8 +48,10 @@ static func box(color: Color, radius:=24) -> StyleBoxFlat:
 static func label(parent: Node, text: String, rect: Rect2, size:=28, color:=Color("fff8e5")) -> Label:
 	var node:=Label.new()
 	node.text=text
+	node.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	node.position=rect.position
 	node.size=rect.size
+	node.custom_minimum_size=rect.size
 	node.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	node.vertical_alignment=VERTICAL_ALIGNMENT_CENTER
 	node.add_theme_font_size_override("font_size",size)
@@ -91,12 +93,15 @@ static func button(parent: Node,text: String,rect: Rect2,action: Callable,color:
 
 static func style_dialog(dialog: AcceptDialog) -> void:
 	dialog.theme=load("res://assets/ui/game_theme.tres")
+	dialog.min_size=Vector2i(560,240)
+	dialog.max_size=Vector2i(620,640)
 	dialog.get_label().horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	dialog.get_label().vertical_alignment=VERTICAL_ALIGNMENT_CENTER
 	dialog.get_label().add_theme_font_override("font",game_font())
 	dialog.get_label().add_theme_color_override("font_color",Color("fff8e5"))
-	dialog.get_label().add_theme_font_size_override("font_size",25)
+	dialog.get_label().add_theme_font_size_override("font_size",24)
 	dialog.get_label().autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	dialog.get_label().custom_minimum_size=Vector2(510,0)
 	var buttons: Array[Button]=[dialog.get_ok_button()]
 	if dialog is ConfirmationDialog: buttons.append(dialog.get_cancel_button())
 	for button in buttons:

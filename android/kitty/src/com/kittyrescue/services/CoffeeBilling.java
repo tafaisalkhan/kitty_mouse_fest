@@ -47,6 +47,10 @@ final class CoffeeBilling implements PurchasesUpdatedListener {
                     .setProductType(BillingClient.ProductType.INAPP)
                     .build());
         }
+        items.add(QueryProductDetailsParams.Product.newBuilder()
+                .setProductId("remove_ads")
+                .setProductType(BillingClient.ProductType.INAPP)
+                .build());
         client.queryProductDetailsAsync(QueryProductDetailsParams.newBuilder().setProductList(items).build(), (result, details) -> {
             if (result.getResponseCode() != BillingClient.BillingResponseCode.OK) {
                 owner.event("billing_unavailable", "");
@@ -57,9 +61,21 @@ final class CoffeeBilling implements PurchasesUpdatedListener {
                 if (list == null || list.isEmpty()) continue;
                 products.put(product.getProductId(), product);
                 offers.put(product.getProductId(), list.get(0));
-                owner.event("pack_price", product.getProductId() + ":" + list.get(0).getFormattedPrice());
+                if ("remove_ads".equals(product.getProductId())) {
+                    owner.event("remove_ads_price", list.get(0).getFormattedPrice());
+                } else {
+                    owner.event("pack_price", product.getProductId() + ":" + list.get(0).getFormattedPrice());
+                }
             }
         });
+    }
+
+    void buyRemoveAds() {
+        if (owner.ads_removed()) {
+            owner.event("message", "Ads are already removed.");
+            return;
+        }
+        launchCheckout("remove_ads");
     }
 
     void buyProduct(String id) {
@@ -67,6 +83,10 @@ final class CoffeeBilling implements PurchasesUpdatedListener {
             owner.event("message", "This coin pack is not available.");
             return;
         }
+        launchCheckout(id);
+    }
+
+    private void launchCheckout(String id) {
         ProductDetails product = products.get(id);
         ProductDetails.OneTimePurchaseOfferDetails offer = offers.get(id);
         if (product == null || offer == null || client == null || !client.isReady()) {
@@ -94,6 +114,7 @@ final class CoffeeBilling implements PurchasesUpdatedListener {
     }
 
     private void finish(Purchase purchase) {
+        boolean isRemoveAds = purchase.getProducts().contains("remove_ads");
         String matchedId = null;
         for (String id : COIN_PACKS.keySet()) {
             if (purchase.getProducts().contains(id)) {
@@ -101,12 +122,20 @@ final class CoffeeBilling implements PurchasesUpdatedListener {
                 break;
             }
         }
-        if (matchedId == null) return;
+        if (!isRemoveAds && matchedId == null) return;
         if (purchase.getPurchaseState() == Purchase.PurchaseState.PENDING) {
-            owner.event("message", "Your purchase is pending in Google Play. Coins unlock when payment completes.");
+            owner.event("message", "Your purchase is pending in Google Play. It unlocks when payment completes.");
             return;
         }
         if (purchase.getPurchaseState() != Purchase.PurchaseState.PURCHASED) return;
+        if (isRemoveAds) {
+            owner.setAdsRemoved(true);
+            if (purchase.isAcknowledged() || !processing.add(purchase.getPurchaseToken())) return;
+            client.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.getPurchaseToken()).build(), result -> {
+                processing.remove(purchase.getPurchaseToken());
+            });
+            return;
+        }
         if (!processing.add(purchase.getPurchaseToken())) return;
         final String productId = matchedId;
         final int coins = COIN_PACKS.get(matchedId);
@@ -132,8 +161,13 @@ final class CoffeeBilling implements PurchasesUpdatedListener {
                 if (notify) owner.event("message", "Google Play could not check purchases. Please try again.");
                 return;
             }
+            boolean owned = false;
+            for (Purchase purchase : purchases) {
+                if (purchase.getProducts().contains("remove_ads") && purchase.getPurchaseState() == Purchase.PurchaseState.PURCHASED) owned = true;
+            }
+            owner.setAdsRemoved(owned);
             for (Purchase purchase : purchases) finish(purchase);
-            if (notify) owner.event("restore_complete", "Pending Google Play coin purchases were checked.");
+            if (notify) owner.event("restore_complete", owned ? "Remove Ads restored and pending coin purchases checked." : "Pending Google Play purchases were checked.");
         });
     }
 

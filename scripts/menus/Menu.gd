@@ -172,9 +172,9 @@ func open_daily() -> void:
 		Commerce.daily_popup(self,func(): show_page("MainMenu"))
 
 func service_event(kind: String,payload: String) -> void:
-	if kind in ["pack_price","coins_purchased","play_games_signed_in"]:
+	if kind in ["pack_price","coins_purchased","play_games_signed_in","remove_ads_price","ads_removed"]:
 		if kind=="coins_purchased": message("Coins Added!","+%s coins have been added to your balance."%payload)
-		if page in ["Shop","Leaderboard","Achievements","MainMenu"]: show_page(page)
+		if page in ["Shop","Leaderboard","Achievements","Settings","MainMenu"]: show_page(page)
 	if kind in ["message","restore_complete"]: message("Kitty Hunt",payload)
 	elif kind in ["update_available","update_downloaded"] and page=="MainMenu":
 		if PlatformServices.update_prompts.get(kind,false): return
@@ -260,26 +260,29 @@ func levels_page() -> void:
 func settings_page() -> void:
 	header("SETTINGS")
 	var rows:=[ ["Music","music"],["Sound effects","effects"],["Vibration","vibration"],["Left-handed tools","left_handed"],["Reduce motion","reduce_motion"] ]
-	var y:=175
+	var y:=165
 	for row in rows:
-		var row_label:=UI.label(content,row[0],Rect2(60,y,370,60),28)
+		var row_label:=UI.label(content,row[0],Rect2(60,y,370,56),27)
 		row_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
 		var check:=CheckButton.new()
 		check.position=Vector2(490,y)
-		check.size=Vector2(140,60)
-		check.text="ON"
-		check.button_pressed=SaveManager.settings[row[1]]
+		check.size=Vector2(140,56)
+		check.button_pressed=bool(SaveManager.settings[row[1]])
+		check.text="ON" if check.button_pressed else "OFF"
 		check.add_theme_font_override("font",UI.game_font())
 		check.add_theme_font_size_override("font_size",24)
 		var key: String=row[1]
-		check.toggled.connect(func(value): SaveManager.settings[key]=value; SaveManager.save_settings())
+		check.toggled.connect(func(value):
+			SaveManager.settings[key]=value
+			check.text="ON" if value else "OFF"
+			SaveManager.save_settings())
 		content.add_child(check)
-		y+=90
+		y+=82
 	for pair in [["Music volume","music_volume"],["Effects volume","effects_volume"]]:
-		var vol_label:=UI.label(content,pair[0],Rect2(60,y,260,65),24)
+		var vol_label:=UI.label(content,pair[0],Rect2(60,y,260,60),24)
 		vol_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_LEFT
 		var slider:=HSlider.new()
-		slider.position=Vector2(345,y+15)
+		slider.position=Vector2(345,y+12)
 		slider.size=Vector2(280,40)
 		slider.max_value=1
 		slider.step=0.01
@@ -287,16 +290,19 @@ func settings_page() -> void:
 		var key: String=pair[1]
 		slider.value_changed.connect(func(value): SaveManager.settings[key]=value; SaveManager.save_settings())
 		content.add_child(slider)
-		y+=85
-	UI.button(content,"RATE GAME",Rect2(45,840,300,64),PlatformServices.rate_game,Color("5596dd"))
-	UI.button(content,"SHARE GAME",Rect2(375,840,300,64),PlatformServices.share_game,Color("5596dd"))
-	UI.button(content,"RESTORE COINS",Rect2(45,925,630,64),PlatformServices.restore_purchases,Color("8568c2"))
-	UI.button(content,"DAILY CHALLENGE ALERT",Rect2(45,1010,630,64),func(): PlatformServices.update_notification(not SaveManager.settings.get("challenge_notifications",false)); show_page("Settings"),Color("65a852"))
-	UI.label(content,"Notifications: "+("ON" if SaveManager.settings.get("challenge_notifications",false) else "OFF"),Rect2(80,1080,560,35),21)
-	UI.button(content,"PRIVACY",Rect2(45,1130,300,60),func():
+		y+=78
+	UI.button(content,"RATE GAME",Rect2(45,745,300,62),PlatformServices.rate_game,Color("5596dd"))
+	UI.button(content,"SHARE GAME",Rect2(375,745,300,62),PlatformServices.share_game,Color("5596dd"))
+	UI.button(content,"RESTORE PURCHASES",Rect2(45,825,630,62),PlatformServices.restore_purchases,Color("8568c2"))
+	UI.button(content,"DAILY CHALLENGE ALERT",Rect2(45,905,630,62),func(): PlatformServices.update_notification(not SaveManager.settings.get("challenge_notifications",false)); show_page("Settings"),Color("65a852"))
+	UI.label(content,"Notifications: "+("ON" if SaveManager.settings.get("challenge_notifications",false) else "OFF"),Rect2(80,972,560,34),21)
+	UI.button(content,"PRIVACY",Rect2(45,1020,300,60),func():
 		if PlatformServices.native and not AdsService.no_fill_this_launch: PlatformServices.native.privacy_options()
 		else: message("Privacy","Progress is stored on your device. Google Play handles purchases. AdMob requests ads only when configured and consent allows. For privacy questions, contact muhammadfaysal.khan7@gmail.com."))
-	UI.button(content,"RESET",Rect2(375,1130,300,60),reset_confirm,Color("ca6b65"))
+	UI.button(content,"RESET",Rect2(375,1020,300,60),reset_confirm,Color("ca6b65"))
+	var remove_ads:=UI.button(content,"ADS REMOVED ✓" if PlatformServices.ads_removed else "REMOVE ADS · "+(PlatformServices.remove_ads_price if not PlatformServices.remove_ads_price.is_empty() else "$4.99"),Rect2(45,1100,630,62),PlatformServices.buy_remove_ads,Color("a362bf"))
+	remove_ads.add_theme_font_size_override("font_size",25)
+	remove_ads.disabled=PlatformServices.ads_removed
 
 func leaderboard_page() -> void:
 	AdsService.home_visible(false)
@@ -361,28 +367,28 @@ func achievements_page() -> void:
 func message(title: String,text: String) -> void:
 	var dialog:=AcceptDialog.new()
 	dialog.title=title
+	UI.style_dialog(dialog)
 	dialog.dialog_text=text
 	add_child(dialog)
-	UI.style_dialog(dialog)
-	dialog.popup_centered(Vector2i(500,230))
+	dialog.popup_centered(Vector2i(580,280))
 
 func reset_confirm() -> void:
 	var dialog:=ConfirmationDialog.new()
 	dialog.title="Reset progress?"
+	UI.style_dialog(dialog)
 	dialog.dialog_text="Your stars, records and unlocks will be erased."
 	dialog.confirmed.connect(func(): SaveManager.reset_progress(); show_page("Settings"))
 	add_child(dialog)
-	UI.style_dialog(dialog)
-	dialog.popup_centered(Vector2i(480,200))
+	dialog.popup_centered(Vector2i(540,220))
 
 func quit_confirm() -> void:
 	var dialog:=ConfirmationDialog.new()
 	dialog.title="See you soon?"
+	UI.style_dialog(dialog)
 	dialog.dialog_text="Quit Kitty Hunt?"
 	dialog.confirmed.connect(func(): get_tree().quit())
 	add_child(dialog)
-	UI.style_dialog(dialog)
-	dialog.popup_centered(Vector2i(400,180))
+	dialog.popup_centered(Vector2i(460,200))
 
 func _notification(what: int) -> void:
 	if what==NOTIFICATION_APPLICATION_RESUMED: refresh_home_day()
