@@ -98,7 +98,9 @@ func main_page() -> void:
 	var levels_btn:=UI.button(content,"LEVELS",Rect2(195,368,330,58),func(): go("LevelSelect"),Color("3b8bd6"))
 	levels_btn.add_theme_font_size_override("font_size",26)
 	UI.button(content,"DAILY CHALLENGE",Rect2(155,1035,410,62),func(): start(25,true),Color("7d65dc"))
-	var lb_btn:=UI.button(content,"LEADERBOARD",Rect2(45,1120,305,62),func(): show_page("Leaderboard"); Economy.left_home=true; AdsService.home_visible(false),Color("4278be"))
+	var lb_btn:=UI.button(content,"LEADERBOARD",Rect2(45,1120,305,62),func():
+		if PlatformServices.native: PlatformServices.show_google_leaderboard()
+		else: show_page("Leaderboard"); Economy.left_home=true; AdsService.home_visible(false),Color("4278be"))
 	lb_btn.add_theme_font_size_override("font_size",23)
 	var ach_btn:=UI.button(content,"ACHIEVEMENTS",Rect2(370,1120,305,62),func(): show_page("Achievements"); Economy.left_home=true; AdsService.home_visible(false),Color("8e5bd6"))
 	ach_btn.add_theme_font_size_override("font_size",23)
