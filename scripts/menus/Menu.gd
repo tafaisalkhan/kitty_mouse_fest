@@ -259,6 +259,8 @@ func levels_page() -> void:
 
 func settings_page() -> void:
 	header("SETTINGS")
+	Commerce.card(content,Rect2(28,138,664,1050),Color("2c3e99"),Color("ffcb45"))
+	Commerce.card(content,Rect2(44,154,632,556),Color("4159c4"),Color("8cb4ff"))
 	var rows:=[ ["Music","music"],["Sound effects","effects"],["Vibration","vibration"],["Left-handed tools","left_handed"],["Reduce motion","reduce_motion"] ]
 	var y:=165
 	for row in rows:
