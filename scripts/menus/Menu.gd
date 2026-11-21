@@ -173,7 +173,17 @@ func service_event(kind: String,payload: String) -> void:
 	if kind in ["pack_price","coins_purchased","play_games_signed_in","remove_ads_price","ads_removed"]:
 		if kind=="coins_purchased": message("Coins Added!","+%s coins have been added to your balance."%payload)
 		if page in ["Shop","Leaderboard","Achievements","Settings","MainMenu"]: show_page(page)
+	if kind=="coffee_price":
+		var popup:=get_node_or_null("CommercePopup")
+		if popup:
+			var coffee:=popup.get_node_or_null("CoffeeButton")
+			if coffee:
+				coffee.disabled=PlatformServices.coffee_price.is_empty()
+				coffee.text=String(popup.get_meta("coffee_prefix","COFFEE · "))+("$1.99" if coffee.disabled else PlatformServices.coffee_price)
+				var detail:=popup.get_node_or_null("CoffeeAvailability")
+				if detail: detail.text="Available through Google Play." if coffee.disabled else "A one-time consumable to support new adventures."
 	if kind in ["message","restore_complete"]: message("Kitty Hunt",payload)
+	elif kind=="coffee_purchased": message("Thank you!","Your coffee helps make more kitten adventures.")
 	elif kind in ["update_available","update_downloaded"] and page=="MainMenu":
 		if PlatformServices.update_prompts.get(kind,false): return
 		PlatformServices.update_prompts[kind]=true

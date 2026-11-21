@@ -48,7 +48,7 @@ public final class KittyServices extends GodotPlugin {
     @UsedByGodot public void privacy_options() { runOnUiThread(() -> com.google.android.ump.UserMessagingPlatform.showPrivacyOptionsForm(getActivity(), error -> {})); }
     @UsedByGodot public void start_commerce() { runOnUiThread(() -> { if (billing == null) { billing = new CoffeeBilling(this); billing.connect(); } }); }
     @UsedByGodot public void buy_product(String id) { runOnUiThread(() -> { if (billing != null) billing.buyProduct(id); else event("message", "Google Play billing is not ready."); }); }
-    @UsedByGodot public void buy_coffee() { buy_product("coins_1000"); }
+    @UsedByGodot public void buy_coffee() { runOnUiThread(() -> { if (billing != null) billing.buyCoffee(); else event("message", "Google Play billing is not ready."); }); }
     @UsedByGodot public void buy_remove_ads() { runOnUiThread(() -> { if (billing != null) billing.buyRemoveAds(); else event("message", "Google Play billing is not ready."); }); }
     @UsedByGodot public void restore_purchases() { runOnUiThread(() -> { if (billing != null) billing.restore(); else event("message", "Google Play billing is not ready."); }); }
     private String storeUrl() { return "https://play.google.com/store/apps/details?id=" + getActivity().getPackageName(); }

@@ -47,10 +47,12 @@ final class CoffeeBilling implements PurchasesUpdatedListener {
                     .setProductType(BillingClient.ProductType.INAPP)
                     .build());
         }
-        items.add(QueryProductDetailsParams.Product.newBuilder()
-                .setProductId("remove_ads")
-                .setProductType(BillingClient.ProductType.INAPP)
-                .build());
+        for (String id : new String[]{"remove_ads", "cofee"}) {
+            items.add(QueryProductDetailsParams.Product.newBuilder()
+                    .setProductId(id)
+                    .setProductType(BillingClient.ProductType.INAPP)
+                    .build());
+        }
         client.queryProductDetailsAsync(QueryProductDetailsParams.newBuilder().setProductList(items).build(), (result, details) -> {
             if (result.getResponseCode() != BillingClient.BillingResponseCode.OK) {
                 owner.event("billing_unavailable", "");
@@ -63,11 +65,17 @@ final class CoffeeBilling implements PurchasesUpdatedListener {
                 offers.put(product.getProductId(), list.get(0));
                 if ("remove_ads".equals(product.getProductId())) {
                     owner.event("remove_ads_price", list.get(0).getFormattedPrice());
+                } else if ("cofee".equals(product.getProductId())) {
+                    owner.event("coffee_price", list.get(0).getFormattedPrice());
                 } else {
                     owner.event("pack_price", product.getProductId() + ":" + list.get(0).getFormattedPrice());
                 }
             }
         });
+    }
+
+    void buyCoffee() {
+        launchCheckout("cofee");
     }
 
     void buyRemoveAds() {
@@ -115,6 +123,7 @@ final class CoffeeBilling implements PurchasesUpdatedListener {
 
     private void finish(Purchase purchase) {
         boolean isRemoveAds = purchase.getProducts().contains("remove_ads");
+        boolean isCoffee = purchase.getProducts().contains("cofee");
         String matchedId = null;
         for (String id : COIN_PACKS.keySet()) {
             if (purchase.getProducts().contains(id)) {
@@ -122,7 +131,7 @@ final class CoffeeBilling implements PurchasesUpdatedListener {
                 break;
             }
         }
-        if (!isRemoveAds && matchedId == null) return;
+        if (!isRemoveAds && !isCoffee && matchedId == null) return;
         if (purchase.getPurchaseState() == Purchase.PurchaseState.PENDING) {
             owner.event("message", "Your purchase is pending in Google Play. It unlocks when payment completes.");
             return;
@@ -137,6 +146,17 @@ final class CoffeeBilling implements PurchasesUpdatedListener {
             return;
         }
         if (!processing.add(purchase.getPurchaseToken())) return;
+        if (isCoffee) {
+            client.consumeAsync(ConsumeParams.newBuilder().setPurchaseToken(purchase.getPurchaseToken()).build(), (result, token) -> {
+                processing.remove(token);
+                if (result.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+                    owner.event("coffee_purchased", "cofee");
+                } else {
+                    owner.event("message", "Coffee payment received. Google Play will retry delivery when you reopen the game.");
+                }
+            });
+            return;
+        }
         final String productId = matchedId;
         final int coins = COIN_PACKS.get(matchedId);
         client.consumeAsync(ConsumeParams.newBuilder().setPurchaseToken(purchase.getPurchaseToken()).build(), (result, token) -> {
