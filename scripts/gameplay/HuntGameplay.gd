@@ -25,6 +25,13 @@ var tilt_control=preload("res://scripts/gameplay/TiltControl.gd").new()
 var tilt_axis:=0.0
 var cat_call_timer:=8.0
 var prey_target: Node2D
+var nav_path: PackedVector2Array=PackedVector2Array()
+var nav_path_age: float=0.0
+var nav_path_revision: int=-1
+var nav_stuck_timer: float=0.0
+var nav_detour_dir: float=0.0
+var nav_detour_timer: float=0.0
+var nav_detour_start_y: float=0.0
 
 func _ready() -> void:
 	if level_override.is_empty() or level_override.get("mode","")!="mouse_hunt":
@@ -36,7 +43,7 @@ func _ready() -> void:
 	# Verification replays widen the authored route by Kitty's added radius,
 	# using actual adjacent narrow strokes rather than changing the brush.
 	level_override.reference_brush_radius=float(level_override.terrain.get("brush_radius",84))+50.0
-	level_override.terrain.brush_radius=28.0
+	level_override.terrain.brush_radius=44.0
 	level_override.start_surface_y=surface_y
 	level_override.tutorial=level_override.get("tutorial","Dig small strokes. Widen Kitty's path. Eat SMALL first!") if level_override.get("trial",false) or level_override.get("endless",false) else "Dig small strokes. Widen Kitty's path. Eat SMALL first!"
 	super._ready()
@@ -238,9 +245,35 @@ func sync_active_hazards() -> void:
 		obstacle.set_physics_process(active)
 		if obstacle.body is RigidBody2D: obstacle.body.set_deferred("freeze",not active)
 
+func find_nav_cell(grid: AStarGrid2D, world_pos: Vector2) -> Vector2i:
+	var region: Rect2i=grid.region
+	var base:=Vector2i(
+		clampi(floori((world_pos.x-terrain.position.x)/20.0),region.position.x,region.end.x-1),
+		clampi(floori((world_pos.y-terrain.position.y)/20.0),region.position.y,region.end.y-1)
+	)
+	if not grid.is_point_solid(base):
+		return base
+	var best:=Vector2i(-1,-1)
+	var best_score: float=INF
+	for radius in range(1,5):
+		for dy in range(-radius,radius+1):
+			for dx in range(-radius,radius+1):
+				if maxi(absi(dx),absi(dy))!=radius:
+					continue
+				var candidate:=base+Vector2i(dx,dy)
+				if not region.has_point(candidate) or grid.is_point_solid(candidate):
+					continue
+				var score: float=float(dx*dx+dy*dy)+(0.25 if dy>0 else 0.0)
+				if score<best_score:
+					best_score=score
+					best=candidate
+		if best.x>=0:
+			return best
+	return best
+
 func steer_toward_prey(delta: float) -> void:
-	# Kitty eagerly rolls toward edible prey; excavation still determines
-	# which passages exist, and gravity/terrain collisions control her descent.
+	# Kitty eagerly rolls toward edible prey and routes around brick/terrain obstacles
+	# using the open-space navigation grid plus a stuck-detour fallback.
 	var target: Node2D=null
 	var nearest:=800.0
 	var clear_target:=false
@@ -258,21 +291,65 @@ func steer_toward_prey(delta: float) -> void:
 			target=mouse
 			nearest=distance
 	var desired:=0.0
+	nav_path_age+=delta
 	if target:
+		var target_changed: bool=prey_target!=target
 		prey_target=target
 		var approach_x: float=target.position.x
-		for mouse in mice:
-			if mouse.eaten or mouse.required_growth<=growth or int(mouse.config.section)!=section_index: continue
-			if mouse.position.distance_to(target.position)>cat.radius*2+mouse.radius+target.radius+35: continue
-			# A larger cat needs room to approach food beside an oversized mouse.
-			var away:=signf(target.position.x-mouse.position.x)
-			if away==0: away=signf(cat.position.x-mouse.position.x)
-			if away==0: away=1.0
-			approach_x=target.position.x+away*(cat.radius*0.9+mouse.radius*0.2)
-			break
+		var using_nav_path: bool=false
+		if not clear_target:
+			if target_changed or nav_path_revision!=terrain.revision or nav_path_age>=0.15:
+				nav_path_age=0.0
+				nav_path_revision=terrain.revision
+				var nav_grid: AStarGrid2D=terrain.bee_navigation(cat.radius*0.65,190.0+960.0*section_index,1150.0+960.0*section_index)
+				var start_cell: Vector2i=find_nav_cell(nav_grid,cat.global_position)
+				var end_cell: Vector2i=find_nav_cell(nav_grid,target.global_position)
+				if start_cell.x>=0 and end_cell.x>=0:
+					nav_path=nav_grid.get_point_path(start_cell,end_cell)
+				else:
+					nav_path=PackedVector2Array()
+			if nav_path.size()>=2:
+				var waypoint: Vector2=nav_path[nav_path.size()-1]
+				for i in range(1,nav_path.size()):
+					if nav_path[i].distance_to(cat.global_position)>=40.0:
+						waypoint=nav_path[i]
+						break
+				approach_x=waypoint.x
+				using_nav_path=true
+		else:
+			nav_path=PackedVector2Array()
+		if not using_nav_path:
+			for mouse in mice:
+				if mouse.eaten or mouse.required_growth<=growth or int(mouse.config.section)!=section_index: continue
+				if mouse.position.distance_to(target.position)>cat.radius*2+mouse.radius+target.radius+35: continue
+				# A larger cat needs room to approach food beside an oversized mouse.
+				var away:=signf(target.position.x-mouse.position.x)
+				if away==0: away=signf(cat.position.x-mouse.position.x)
+				if away==0: away=1.0
+				approach_x=target.position.x+away*(cat.radius*0.9+mouse.radius*0.2)
+				break
 		approach_x=clampf(approach_x,36+cat.radius,684-cat.radius)
-		var max_speed:=220.0 if clear_target else 135.0
+		var max_speed: float=220.0 if clear_target else (185.0 if using_nav_path else 135.0)
 		desired=clampf((approach_x-cat.position.x)*4.0,-max_speed,max_speed)
+	if nav_detour_timer>0.0:
+		nav_detour_timer-=delta
+		if clear_target or cat.position.y>nav_detour_start_y+55.0:
+			nav_detour_timer=0.0
+		else:
+			desired=nav_detour_dir*170.0
+	elif target and absf(desired)>25.0:
+		if absf(cat.linear_velocity.x)<16.0 and absf(cat.linear_velocity.y)<30.0:
+			nav_stuck_timer+=delta
+			if nav_stuck_timer>=0.45:
+				nav_stuck_timer=0.0
+				nav_detour_dir=-signf(desired)
+				nav_detour_timer=1.6
+				nav_detour_start_y=cat.position.y
+				desired=nav_detour_dir*170.0
+		else:
+			nav_stuck_timer=maxf(0.0,nav_stuck_timer-delta*2.0)
+	else:
+		nav_stuck_timer=0.0
 	steering_velocity=move_toward(steering_velocity,desired,720*delta)
 	var acceleration_limit:=1150.0
 	var acceleration:=clampf((steering_velocity-cat.linear_velocity.x)*8.0,-acceleration_limit,acceleration_limit)

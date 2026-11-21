@@ -19,7 +19,7 @@ var cut_material: ShaderMaterial
 var previous_mask: ImageTexture
 var previous_image: Image
 var cut_blend:=1.0
-const CUT_SECONDS:=0.065
+const CUT_SECONDS:=0.05
 var revision:=0
 var bee_grids: Dictionary={}
 
@@ -130,7 +130,7 @@ func build_distance_field() -> PackedFloat32Array:
 
 func dig_segment(a: Vector2,b: Vector2) -> int:
 	var before := removed
-	var steps := maxi(1,ceili(a.distance_to(b)/(brush*0.3)))
+	var steps := maxi(1,ceili(a.distance_to(b)/maxf(4.0,brush*0.16)))
 	for i in range(steps+1):
 		carve(a.lerp(b,float(i)/steps)-position,brush,true)
 	if removed>before and not pending:
