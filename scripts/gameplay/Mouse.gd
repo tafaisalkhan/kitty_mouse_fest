@@ -145,22 +145,28 @@ func _physics_process(delta: float) -> void:
 		var target_x: float=patrol_anchor.x+progress*patrol_distance
 		desired_x=clampf((target_x-position.x)*4,-13,13)
 	velocity.x=move_toward(velocity.x,desired_x,delta*(330 if fleeing else 150))
-	velocity.y=minf(240,velocity.y+980*delta)
+	velocity.y=minf(360,velocity.y+980*delta)
 	var fall_speed:=velocity.y
 	# Sweep the circle and slide its remaining displacement along each contact.
 	# This preserves sideways rolling on a floor without turning gravity into
 	# artificial horizontal speed (CharacterBody floating mode does that).
 	var was_supported:=supported
 	supported=false
+	var slope_normal:=Vector2.ZERO
 	var travel:=velocity*delta
 	for i in 4:
 		var contact:=move_and_collide(travel)
 		if not contact: break
 		var normal:=contact.get_normal()
 		if normal.y< -0.45: supported=true
+		if normal.y< -0.15 and absf(normal.x)>0.18: slope_normal=normal
 		velocity=velocity.slide(normal)
 		travel=contact.get_remainder().slide(normal)
 		if travel.length_squared()<0.000001: break
+	if slope_normal!=Vector2.ZERO:
+		# Let mice slip naturally down dug chutes and slanted ramps toward Kitty.
+		velocity.x=clampf(velocity.x+slope_normal.x*460.0*delta,-260.0,260.0)
+		patrol_anchor=position
 	if supported and not was_supported:
 		elasticity.land(fall_speed)
 		if fall_speed>180: velocity.y=-minf(90,fall_speed*0.14)

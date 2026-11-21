@@ -1,8 +1,9 @@
 extends RefCounted
-const VERSION:=1
+const VERSION:=2
 const Trials=preload("res://scripts/generation/TrialLevels.gd")
 const Validator=preload("res://scripts/generation/LevelValidator.gd")
-const FAMILIES=["Shelf Drop","Opposite Steps","Twin Islands","Long Ramp","Bomb Bridge","laser","bee","rock_switch","portal","water"]
+const FAMILIES=["Shelf Drop","Opposite Steps","Mouse Chute","Long Ramp","Twin Funnel","Twin Islands","Bomb Bridge","laser","bee","rock_switch","portal","water"]
+const CLASSIC_COUNT:=7
 static var memory: Dictionary={}
 static var advanced_cache: Dictionary={}
 static var module_mutex:=Mutex.new()
@@ -31,7 +32,7 @@ static func build(number: int,seed_value: int,forced_family:=-1,forced_mirror:=-
 	var rng:=RandomNumberGenerator.new()
 	rng.seed=seed_value
 	var screens: int=forced_screens if forced_screens>0 else 1 if number<8 else 2 if number<25 else 3 if number<70 else 4 if number<180 else 5
-	var pool:=mini(10,4+int(number/4))
+	var pool:=mini(FAMILIES.size(),5+int(number/3))
 	var source: Dictionary={"schema_version":2,"id":"endless_%d"%number,"number":number,"name":"Burrow %d"%number,"seed":seed_value,"bomb_mode":"physical","resources":{"bombs":0},"sections":[],"required_events":[],"instructions":"Dig a safe route around the bricks. Eat small mice first. Land at each base."}
 	var growth:=0
 	var previous:=-1
@@ -39,17 +40,17 @@ static func build(number: int,seed_value: int,forced_family:=-1,forced_mirror:=-
 	var bricks: Array=[]
 	var start_x:=360.0
 	for index in screens:
-		var family: int=forced_family if forced_family>=0 else (number-1)%4 if number<=4 and index==0 else posmod(number+int(number/pool)*3+index*7,pool)
-		if forced_family<0 and index==0 and number>=5 and number<=25 and (number-5)%4==0: family=mini(9,4+int((number-5)/4))
+		var family: int=forced_family if forced_family>=0 else (number-1)%5 if number<=5 and index==0 else posmod(number+int(number/pool)*3+index*7,pool)
+		if forced_family<0 and index==0 and number>=6 and number<=26 and (number-6)%4==0: family=mini(FAMILIES.size()-1,CLASSIC_COUNT-1+int((number-6)/4))
 		if forced_family<0 and family==previous: family=(family+1)%pool
 		previous=family
 		families.append(family)
 		var mirror: bool=forced_mirror==1 if forced_mirror>=0 else rng.randf()>0.5
 		if number==1 and forced_mirror<0: mirror=false
 		var count: int=2 if number==1 else rng.randi_range(2,4)
-		var part: Dictionary=classic_part(family,count,rng) if family<5 else advanced_part(family)
-		var shift: float=rng.randi_range(-1,1)*10.0 if family>=5 else 0.0
-		if family>=5:
+		var part: Dictionary=classic_part(family,count,rng) if family<CLASSIC_COUNT else advanced_part(family)
+		var shift: float=rng.randi_range(-1,1)*10.0 if family>=CLASSIC_COUNT else 0.0
+		if family>=CLASSIC_COUNT:
 			part.terrain.chambers[-1].radius+=rng.randi_range(0,12)
 		if index==0: start_x=720-float(part.start_x)-shift if mirror else float(part.start_x)+shift
 		var prefix:="e%d_s%d"%[number,index]
@@ -128,10 +129,17 @@ static func classic_part(family: int,count: int,rng: RandomNumberGenerator) -> D
 			approach=[[550,350],[550,640],[170,820]]
 			add_group(part,[245+jitter,lower_y],count,false,approach)
 		2:
-			part.terrain.brick_polygons=[[[270,610],[450,610],[450,685],[270,685]]]
-			add_rock(part,550,475)
-			add_group(part,[145+jitter,500],count,false,[[150,350]])
-			add_group(part,[440-jitter,lower_y],1,true,[[150,800]])
+			# Mouse Chute: Kitty drops down the left shaft to the bottom chamber first,
+			# then the player digs chutes so the upper mice slip down to Kitty.
+			part.start_x=140
+			part.terrain.brick_polygons=[
+				[[250,360],[310,360],[310,830],[250,830]],
+				[[535,785],[690,685],[690,740],[535,840]]
+			]
+			part.terrain.tunnels.append({"points":[[140,390],[140,1045]],"radius":85})
+			part.terrain.tunnels.append({"points":[[140,1045],[535,1045]],"radius":105})
+			add_group(part,[430+jitter,475],count,false,[[140,350],[140,1045],[430,1045]])
+			add_group(part,[580-jitter,620],1,true,[[580,750],[430,1045]])
 		3:
 			part.start_x=550
 			part.terrain.brick_polygons=[[[30,680],[210,680],[380,900],[30,900]]]
@@ -139,6 +147,23 @@ static func classic_part(family: int,count: int,rng: RandomNumberGenerator) -> D
 			add_group(part,[530+jitter,510],count,false,[[550,350]])
 			add_group(part,[220-jitter,1010],1,true,[[550,1010]])
 		4:
+			# Twin Funnel: Kitty drops down the center shaft first; player digs left
+			# chute for SMALL mice to slip down, then right chute for the BIG mouse.
+			part.start_x=360
+			part.terrain.brick_polygons=[
+				[[225,370],[275,370],[275,810],[225,810]],
+				[[445,370],[495,370],[495,810],[445,810]]
+			]
+			part.terrain.tunnels.append({"points":[[360,390],[360,1045]],"radius":85})
+			part.terrain.tunnels.append({"points":[[165,1045],[555,1045]],"radius":105})
+			add_group(part,[130+jitter,505],count,false,[[360,350],[360,1045],[165,1045]])
+			add_group(part,[590-jitter,540],1,true,[[590,880],[360,1045]])
+		5:
+			part.terrain.brick_polygons=[[[270,610],[450,610],[450,685],[270,685]]]
+			add_rock(part,550,475)
+			add_group(part,[145+jitter,500],count,false,[[150,350]])
+			add_group(part,[440-jitter,lower_y],1,true,[[150,800]])
+		6:
 			part.start_x=360
 			part.terrain.walls.append({"id":"module_blast_wall","rect":[80,650,560,35],"breakable":true})
 			part.terrain.chambers.append({"position":[360,530],"radius":45})
